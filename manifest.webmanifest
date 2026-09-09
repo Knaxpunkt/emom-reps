@@ -5,5 +5,5 @@
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
-  "description": "Minimalistischer EMOM-Timer mit Live-Reps, Sounds und Wochenstatistik."
+  "description": "Minimalistischer EMOM-Timer mit Presets, Themes und Live-Reps."
 }

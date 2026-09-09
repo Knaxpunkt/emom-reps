@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0b0d">
+<meta name="theme-color" content="#09090b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
@@ -11,281 +11,258 @@
 <title>EMOM Reps</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
-body{margin:0;background:#09090b;color:#fff;min-height:100dvh}
-main{max-width:560px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
-h1{font-size:30px;margin:4px 0 16px}
-.card{background:#17171b;border:1px solid #2b2b31;border-radius:22px;padding:18px;margin-bottom:14px}
-label{display:block;font-size:12px;color:#9c9ca5;margin:0 0 6px}
-input{width:100%;border:1px solid #373740;border-radius:13px;background:#0e0e11;color:#fff;padding:12px;font-size:21px}
+:root{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  --accent:#f3c95d;
+  --panel:rgba(14,15,18,.78);
+  --panel-border:rgba(255,255,255,.12);
+  --text:#fff;
+  --muted:#a8a8b0;
+}
+html,body{margin:0;background:#09090b;color:var(--text);min-height:100%;overflow-x:hidden}
+body{min-height:100dvh;background-attachment:fixed;background-size:cover;background-position:center}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.36),rgba(0,0,0,.64));z-index:-1}
+body.theme-dark{background:#09090b}
+body.theme-gym{background-image:url('./themes.png');background-size:300% 100%;background-position:left center}
+body.theme-prison{background-image:url('./themes.png');background-size:300% 100%;background-position:center center}
+body.theme-concrete{background-image:linear-gradient(rgba(20,20,22,.45),rgba(9,9,11,.78)),radial-gradient(circle at 20% 15%,#444 0,#18181b 32%,#09090b 70%)}
+main{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{font-size:28px;font-weight:900;letter-spacing:-.02em}.tag{font-size:10px;color:#ddd;letter-spacing:.08em}
+.iconBtn{width:auto;padding:10px 12px;margin:0;border-radius:14px;background:rgba(15,15,18,.76);color:#fff;border:1px solid var(--panel-border)}
+.card{background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--panel-border);border-radius:22px;padding:17px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.22)}
+.presetGrid{display:grid;gap:10px}
+.presetCard{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px;border-radius:18px;background:rgba(9,10,12,.82);border:1px solid rgba(255,255,255,.18);cursor:pointer}
+.presetIcon{font-size:28px;min-width:42px}.presetText{flex:1}.presetTitle{font-size:22px;font-weight:850;line-height:1.05}.presetMeta{font-size:12px;color:#d1d1d6;margin-top:5px}.arrow{font-size:28px;color:#ddd}
+button{touch-action:manipulation;width:100%;border:0;border-radius:16px;padding:16px;font-size:18px;font-weight:800;margin-top:10px;cursor:pointer}
+.primary{background:var(--accent);color:#111}.secondary{background:rgba(28,28,33,.86);color:#fff;border:1px solid rgba(255,255,255,.14)}.danger{background:transparent;color:#ff858b;border:1px solid rgba(255,120,130,.35)}
+.hidden{display:none!important}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13px;background:rgba(8,8,11,.82);color:#fff;padding:12px;font-size:20px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.presets{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:12px}
-.preset{width:auto;white-space:nowrap;padding:10px 13px;margin:0;background:#24242a;color:#fff;border-radius:999px;font-size:14px}
-.timer{text-align:center;padding:25px 12px}
-#clock{font-size:76px;line-height:1;font-weight:850;letter-spacing:-4px;font-variant-numeric:tabular-nums}
-#phase{font-size:16px;color:#aaa;margin-top:10px}
-#round{font-size:20px;color:#c0c0c6;margin-top:7px}
-#live{font-size:37px;font-weight:850;margin-top:10px}
-#now{font-size:15px;color:#aaa;margin-top:8px}
-.progress{height:10px;background:#24242a;border-radius:999px;overflow:hidden;margin-top:16px}
-#bar{height:100%;width:0%;background:#fff;transition:width .2s linear}
-button{touch-action:manipulation;width:100%;border:0;border-radius:16px;padding:17px;font-size:19px;font-weight:800;margin-top:10px;cursor:pointer}
-#start{background:#fff;color:#000}
-#pause,#save{background:#2a2a30;color:#fff}
-#reset{background:transparent;color:#ff7b82;border:1px solid #4d282b}
+.small{font-size:12px;color:var(--muted)}
+.sectionTitle{font-size:12px;letter-spacing:.08em;color:#c8c8ce;margin:0 0 9px}
+.timerWrap{text-align:center}
+.ring{width:278px;height:278px;margin:8px auto 14px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10}
+.ring .track{stroke:rgba(255,255,255,.18)}
+.ring .progress{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .15s linear}
+.ringCenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#clock{font-size:63px;font-weight:900;letter-spacing:-3px;font-variant-numeric:tabular-nums}
+#round{font-size:17px;color:#ddd;margin-top:7px}
+#live{font-size:40px;font-weight:900;margin-top:4px}
+#doneLabel{font-size:12px;color:#ddd;letter-spacing:.04em}
+#now{font-size:18px;font-weight:750}
 .row{display:flex;gap:10px}.row button{flex:1}
-.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
-.setting input{width:25px;height:25px}
-.hint{font-size:12px;color:#777;margin-top:3px}
-.statTitle{font-size:12px;color:#8e8e97;margin-bottom:8px;letter-spacing:.06em}
-#week,#history{font-size:17px;line-height:1.65}
-.historyItem{display:flex;justify-content:space-between;gap:16px;border-top:1px solid #29292f;padding:10px 0}
-.historyItem:first-child{border-top:0}
-.smallBtn{width:auto;padding:8px 12px;font-size:13px;margin:0;background:#24242a;color:#fff}
-#countdownOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:50;align-items:center;justify-content:center;font-size:110px;font-weight:900}
+.settingsRow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)}.settingsRow:last-child{border-bottom:0}.settingsRow input{width:24px;height:24px}
+.themeGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.themeBtn{margin:0;padding:14px;background:rgba(10,10,13,.8);color:#fff;border:1px solid rgba(255,255,255,.15)}
+#countdownOverlay{position:fixed;inset:0;display:none;z-index:60;align-items:center;justify-content:center;background:rgba(0,0,0,.78);font-size:120px;font-weight:950}
+.finishCard{text-align:center;padding:26px 18px}.finishTitle{font-size:45px;font-weight:950}.finishStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.finishStats div{padding:12px 6px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(10,10,13,.72)}.finishNum{font-size:24px;font-weight:900}.finishLab{font-size:11px;color:#bbb;margin-top:3px}
+.historyItem{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.historyItem:first-child{border-top:0}
+#workoutScreen .topbar{margin-bottom:2px}
+.backBtn{width:auto;margin:0;padding:10px 13px}
+@media(max-width:420px){.ring{width:250px;height:250px}#clock{font-size:55px}.presetTitle{font-size:20px}}
 </style>
 </head>
-<body>
+<body class="theme-gym">
 <div id="countdownOverlay">3</div>
 <main>
-<h1>EMOM Reps</h1>
+  <section id="homeScreen">
+    <div class="topbar">
+      <div><div class="brand">EMOM REPS</div><div class="tag">SMALL STEPS. BIG RESULTS.</div></div>
+      <button class="iconBtn" id="openSettings">⚙︎</button>
+    </div>
 
-<div class="presets">
-  <button class="preset" data-name="Push-ups" data-reps="8" data-int="30" data-dur="10">Push-ups</button>
-  <button class="preset" data-name="Australian Pull-ups" data-reps="10" data-int="60" data-dur="10">Australian Pull-ups</button>
-  <button class="preset" data-name="Squats" data-reps="10" data-int="60" data-dur="10">Squats</button>
-</div>
+    <div class="card">
+      <div class="sectionTitle">SCHNELLSTART</div>
+      <div class="presetGrid">
+        <div class="presetCard" data-name="Push-ups" data-reps="8" data-int="30" data-rounds="20">
+          <div class="presetIcon">⬇︎</div><div class="presetText"><div class="presetTitle">PUSH-UPS</div><div class="presetMeta">8 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+        </div>
+        <div class="presetCard" data-name="Australian Pull-ups" data-reps="10" data-int="30" data-rounds="20">
+          <div class="presetIcon">↟</div><div class="presetText"><div class="presetTitle">AUSTRALIAN<br>PULL-UPS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+        </div>
+        <div class="presetCard" data-name="Squats" data-reps="10" data-int="30" data-rounds="20">
+          <div class="presetIcon">◒</div><div class="presetText"><div class="presetTitle">SQUATS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+        </div>
+      </div>
+      <button class="secondary" id="customBtn">☷ EIGENES WORKOUT</button>
+    </div>
 
-<section class="card">
-<label>Übung</label>
-<input id="exercise" value="Push-ups" autocomplete="off">
-<div class="grid" style="margin-top:12px">
-  <div><label>Reps / Runde</label><input id="reps" type="number" min="1" value="8"></div>
-  <div><label>Intervall (Sek.)</label><input id="interval" type="number" min="5" value="30"></div>
-  <div><label>Dauer (Min.)</label><input id="duration" type="number" min="1" value="10"></div>
-  <div><label>Ziel</label><input id="target" disabled></div>
-</div>
-</section>
+    <div class="card">
+      <div class="sectionTitle">DIESE WOCHE</div>
+      <div id="week">Noch kein Training gespeichert.</div>
+    </div>
 
-<section class="card timer">
-  <div id="clock">00:30</div>
-  <div id="phase">Bereit</div>
-  <div id="round">20 Runden</div>
-  <div id="live">0 / 160 Reps</div>
-  <div id="now">Jetzt: 8 Push-ups</div>
-  <div class="progress"><div id="bar"></div></div>
-</section>
+    <div class="card">
+      <div class="sectionTitle">LETZTE TRAININGS</div>
+      <div id="history">Noch kein Training gespeichert.</div>
+    </div>
+  </section>
 
-<section class="card">
-  <div class="setting">
-    <div><strong>3-2-1 Start</strong><div class="hint">Kurzer Countdown vor Trainingsbeginn.</div></div>
-    <input id="countdown" type="checkbox" checked>
-  </div>
-  <div class="setting">
-    <div><strong>Runden-Sound</strong><div class="hint">Ton bei jeder neuen Runde.</div></div>
-    <input id="sound" type="checkbox" checked>
-  </div>
-  <div class="setting">
-    <div><strong>Vorwarnung</strong><div class="hint">3 kurze Signale vor der nächsten Runde.</div></div>
-    <input id="warning" type="checkbox" checked>
-  </div>
-  <div class="setting">
-    <div><strong>Vibration</strong><div class="hint">Wenn dein Gerät/Webbrowser es unterstützt.</div></div>
-    <input id="vibration" type="checkbox" checked>
-  </div>
-</section>
+  <section id="customScreen" class="hidden">
+    <div class="topbar"><button class="secondary backBtn" data-back>‹ Zurück</button><strong>Eigenes Workout</strong><span></span></div>
+    <div class="card">
+      <label>Übung</label><input id="exercise" value="Push-ups">
+      <div class="grid" style="margin-top:12px">
+        <div><label>Reps / Runde</label><input id="reps" type="number" value="8" min="1"></div>
+        <div><label>Intervall (Sek.)</label><input id="interval" type="number" value="30" min="5"></div>
+        <div><label>Runden</label><input id="roundsInput" type="number" value="20" min="1"></div>
+        <div><label>Ziel-Reps</label><input id="target" disabled></div>
+      </div>
+      <button class="primary" id="prepareCustom">WORKOUT STARTEN</button>
+    </div>
+  </section>
 
-<button id="start">START</button>
-<div class="row">
-  <button id="pause">PAUSE</button>
-  <button id="save">SPEICHERN</button>
-</div>
-<button id="reset">RESET</button>
+  <section id="settingsScreen" class="hidden">
+    <div class="topbar"><button class="secondary backBtn" data-back>‹ Zurück</button><strong>Einstellungen</strong><span></span></div>
+    <div class="card">
+      <div class="sectionTitle">HINTERGRUND</div>
+      <div class="themeGrid">
+        <button class="themeBtn" data-theme="gym">90s Sporthalle</button>
+        <button class="themeBtn" data-theme="prison">Knast</button>
+        <button class="themeBtn" data-theme="concrete">Beton</button>
+        <button class="themeBtn" data-theme="dark">Clean Dark</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="settingsRow"><div><strong>3-2-1 Start</strong><div class="small">Countdown vor Beginn</div></div><input id="countdown" type="checkbox" checked></div>
+      <div class="settingsRow"><div><strong>Runden-Sound</strong><div class="small">Ton bei neuer Runde</div></div><input id="sound" type="checkbox" checked></div>
+      <div class="settingsRow"><div><strong>Vorwarnung</strong><div class="small">3, 2, 1 vor der Runde</div></div><input id="warning" type="checkbox" checked></div>
+      <div class="settingsRow"><div><strong>Vibration</strong><div class="small">Wenn unterstützt</div></div><input id="vibration" type="checkbox" checked></div>
+    </div>
+  </section>
 
-<section class="card" style="margin-top:16px">
-  <div class="statTitle">DIESE WOCHE</div>
-  <div id="week">Noch kein Training gespeichert.</div>
-</section>
+  <section id="workoutScreen" class="hidden">
+    <div class="topbar"><button class="secondary backBtn" id="cancelWorkout">‹</button><div style="text-align:center;flex:1"><div id="workoutName" style="font-size:23px;font-weight:900">PUSH-UPS</div><div id="workoutMeta" class="small"></div></div><button class="iconBtn" id="muteBtn">🔊</button></div>
 
-<section class="card">
-  <div class="statTitle">LETZTE TRAININGS</div>
-  <div id="history">Noch kein Training gespeichert.</div>
-</section>
+    <div class="card timerWrap">
+      <div class="ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52"></circle>
+          <circle class="progress" id="ringProgress" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="ringCenter">
+          <div id="clock">00:30</div>
+          <div id="round">Runde 1 / 20</div>
+        </div>
+      </div>
+      <div id="live">0 / 160</div>
+      <div id="doneLabel">REPS ERLEDIGT</div>
+      <div class="card" style="margin:15px 0 0;background:rgba(8,8,10,.72)"><div id="now">Jetzt: 8 Push-ups</div></div>
+    </div>
+    <button class="primary" id="start">START</button>
+    <button class="secondary" id="pause">Ⅱ PAUSE</button>
+  </section>
+
+  <section id="finishScreen" class="hidden">
+    <div class="card finishCard">
+      <div class="finishTitle">GESCHAFFT!</div>
+      <div style="font-size:36px;margin-top:8px">🏆</div>
+      <div class="finishStats">
+        <div><div class="finishNum" id="finishReps">160</div><div class="finishLab">REPS</div></div>
+        <div><div class="finishNum" id="finishRounds">20</div><div class="finishLab">RUNDEN</div></div>
+        <div><div class="finishNum" id="finishTime">10:00</div><div class="finishLab">ZEIT</div></div>
+      </div>
+      <div style="font-size:20px;font-style:italic;margin:14px 0 18px">„Disziplin heute. Freiheit morgen.“</div>
+      <button class="primary" id="again">↻ NOCHMAL</button>
+      <button class="secondary" id="finishHome">SPEICHERN & STARTSEITE</button>
+    </div>
+  </section>
+</main>
 
 <script>
-(() => {
-  const $ = id => document.getElementById(id);
-  let running=false, started=false, elapsed=0, last=null, raf=null;
-  let completedRounds=0, lastWarnSecond=null, audioCtx=null, autoSaved=false;
+(()=>{
+const $=id=>document.getElementById(id);
+const screens=['homeScreen','customScreen','settingsScreen','workoutScreen','finishScreen'];
+const C=2*Math.PI*52;
+$('ringProgress').style.strokeDasharray=C;
+$('ringProgress').style.strokeDashoffset=C;
 
-  function num(id,fallback){const n=Number($(id).value);return Number.isFinite(n)&&n>0?n:fallback}
-  function cfg(){
-    const reps=Math.floor(num('reps',8));
-    const interval=num('interval',30);
-    const duration=num('duration',10);
-    const rounds=Math.max(1,Math.floor(duration*60/interval));
-    const target=rounds*reps;
-    $('target').value=target;
-    return {reps,interval,duration,rounds,target};
-  }
-  function fmt(s){
-    s=Math.max(0,Math.ceil(s));
-    return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
-  }
-  function ensureAudio(){
-    try{
-      audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
-      if(audioCtx.state==='suspended') audioCtx.resume();
-    }catch(e){}
-  }
-  function tone(freq=880,dur=.10,gain=.12){
-    if(!$('sound').checked && freq>=700) return;
-    try{
-      ensureAudio();
-      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;
-      g.gain.setValueAtTime(gain,audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);
-      o.start();o.stop(audioCtx.currentTime+dur);
-    }catch(e){}
-  }
-  function vibrate(pattern=80){
-    if($('vibration').checked && navigator.vibrate) navigator.vibrate(pattern);
-  }
+let workout={name:'Push-ups',reps:8,interval:30,rounds:20};
+let running=false,started=false,elapsed=0,last=null,raf=null,completed=0,audioCtx=null,lastWarn=null,autoSaved=false;
 
-  function draw(){
-    const c=cfg();
-    const totalTime=c.rounds*c.interval;
-    const activeRound = started ? Math.min(completedRounds+1,c.rounds) : 0;
-    const within = elapsed % c.interval;
-    const remaining = started ? c.interval-within : c.interval;
-    const doneReps = Math.min(completedRounds*c.reps,c.target);
-    const progress = totalTime ? Math.min(100,(elapsed/totalTime)*100) : 0;
+function show(id){screens.forEach(s=>$(s).classList.toggle('hidden',s!==id));window.scrollTo({top:0,behavior:'instant'})}
+function target(){return workout.reps*workout.rounds}
+function totalTime(){return workout.interval*workout.rounds}
+function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function setWorkout(name,reps,intv,rounds){workout={name,reps:+reps,interval:+intv,rounds:+rounds};resetState();renderWorkout();show('workoutScreen')}
+function renderWorkout(){
+ $('workoutName').textContent=workout.name.toUpperCase();
+ $('workoutMeta').textContent=`${workout.reps} Reps · ${workout.interval} Sek. · ${workout.rounds} Runden`;
+ const active=started?Math.min(completed+1,workout.rounds):1;
+ const rem=started?workout.interval-(elapsed%workout.interval):workout.interval;
+ $('clock').textContent=fmt(rem);
+ $('round').textContent=`Runde ${active} / ${workout.rounds}`;
+ $('live').textContent=`${completed*workout.reps} / ${target()}`;
+ $('now').textContent=`Jetzt: ${workout.reps} ${workout.name}`;
+ const p=started?(elapsed%workout.interval)/workout.interval:0;
+ $('ringProgress').style.strokeDashoffset=C*(1-p);
+}
+function resetState(){running=false;started=false;elapsed=0;last=null;completed=0;lastWarn=null;autoSaved=false;if(raf)cancelAnimationFrame(raf)}
+function audio(){try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}}
+function tone(freq=880,dur=.09,gain=.11){
+ if(!$('sound').checked && freq>=700)return;
+ try{audio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}
+}
+function vib(p=70){if($('vibration').checked&&navigator.vibrate)navigator.vibrate(p)}
+function countdown(){
+ if(!$('countdown').checked)return Promise.resolve();
+ return new Promise(res=>{const ov=$('countdownOverlay');let n=3;ov.style.display='flex';ov.textContent=n;tone(520,.07,.09);const id=setInterval(()=>{n--;if(n>0){ov.textContent=n;tone(520,.07,.09)}else{clearInterval(id);ov.textContent='GO';tone(980,.15,.14);vib([70,40,70]);setTimeout(()=>{ov.style.display='none';res()},320)}},700)})
+}
+function warn(){
+ if(!$('warning').checked||!running)return;
+ const rem=Math.ceil(workout.interval-(elapsed%workout.interval));
+ if(rem<=3&&rem>=1&&rem!==lastWarn){lastWarn=rem;tone(430,.05,.06)}
+ if(rem>3)lastWarn=null
+}
+function frame(ts){
+ if(!running)return;
+ if(last===null)last=ts;
+ elapsed+=(ts-last)/1000;last=ts;
+ const should=Math.min(Math.floor(elapsed/workout.interval),workout.rounds);
+ if(should>completed){completed=should;if(completed<workout.rounds){tone(880,.1,.11);vib(70)}}
+ warn();
+ if(elapsed>=totalTime()){
+   elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return;
+ }
+ renderWorkout();raf=requestAnimationFrame(frame)
+}
+$('start').onclick=async()=>{if(running)return;audio();if(!started){await countdown();started=true}running=true;last=null;renderWorkout();raf=requestAnimationFrame(frame)}
+$('pause').onclick=()=>{running=false;last=null;if(raf)cancelAnimationFrame(raf);renderWorkout()}
+$('cancelWorkout').onclick=()=>{resetState();show('homeScreen')}
+$('muteBtn').onclick=()=>{$('sound').checked=!$('sound').checked;$('muteBtn').textContent=$('sound').checked?'🔊':'🔇'}
 
-    $('clock').textContent=fmt(remaining);
-    $('phase').textContent=running?'Läuft':(started?'Pausiert':'Bereit');
-    $('round').textContent=started?`Runde ${activeRound} / ${c.rounds}`:`${c.rounds} Runden`;
-    $('live').textContent=`${doneReps} / ${c.target} Reps`;
-    $('now').textContent=started && completedRounds<c.rounds ? `Jetzt: ${c.reps} ${$('exercise').value || 'Reps'}` : `Ziel: ${c.target} Reps`;
-    $('bar').style.width=progress+'%';
-  }
+document.querySelectorAll('.presetCard').forEach(c=>c.onclick=()=>setWorkout(c.dataset.name,c.dataset.reps,c.dataset.int,c.dataset.rounds))
+$('customBtn').onclick=()=>show('customScreen');
+$('openSettings').onclick=()=>show('settingsScreen');
+document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('homeScreen'));
+$('prepareCustom').onclick=()=>setWorkout($('exercise').value||'Workout',$('reps').value,$('interval').value,$('roundsInput').value);
+['reps','roundsInput'].forEach(id=>$(id).addEventListener('input',()=>{$('target').value=(+$('reps').value||0)*(+$('roundsInput').value||0)}));$('target').value=160;
 
-  function startCountdown(){
-    if(!$('countdown').checked) return Promise.resolve();
-    return new Promise(resolve=>{
-      const ov=$('countdownOverlay'); let n=3;
-      ov.style.display='flex';ov.textContent=n;tone(520,.08,.10);
-      const id=setInterval(()=>{
-        n--;
-        if(n>0){ov.textContent=n;tone(520,.08,.10)}
-        else{
-          clearInterval(id);ov.textContent='GO';tone(920,.15,.14);vibrate([70,40,70]);
-          setTimeout(()=>{ov.style.display='none';resolve()},350);
-        }
-      },700);
-    });
-  }
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme',b.dataset.theme)})
+const savedTheme=localStorage.getItem('emom-theme')||'gym';document.body.className='theme-'+savedTheme;
 
-  function maybeWarn(c){
-    if(!$('warning').checked || !running) return;
-    const rem=Math.ceil(c.interval-(elapsed%c.interval));
-    if(rem<=3 && rem>=1 && rem!==lastWarnSecond){
-      lastWarnSecond=rem;
-      tone(440,.06,.07);
-    }
-    if(rem>3) lastWarnSecond=null;
-  }
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v4-log')||'[]')}catch(e){return[]}}
+function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
+function saveWorkout(){
+ if(autoSaved)return;autoSaved=true;
+ const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});
+ localStorage.setItem('emom-reps-v4-log',JSON.stringify(l));renderStats()
+}
+function renderStats(){
+ const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
+ const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
+ const recent=l.slice(-5).reverse();$('history').innerHTML=recent.length?recent.map(x=>{const d=new Date(x.date);return `<div class="historyItem"><span>${x.name}<br><span class="small">${d.toLocaleDateString('de-DE')} · ${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`}).join(''):'Noch kein Training gespeichert.'
+}
+function renderFinish(){$('finishReps').textContent=target();$('finishRounds').textContent=workout.rounds;$('finishTime').textContent=fmt(totalTime())}
+$('again').onclick=()=>{resetState();renderWorkout();show('workoutScreen')}
+$('finishHome').onclick=()=>{resetState();renderStats();show('homeScreen')}
+renderStats();renderWorkout();
 
-  function frame(ts){
-    if(!running)return;
-    if(last===null)last=ts;
-    elapsed+=(ts-last)/1000;last=ts;
-    const c=cfg();
-    const totalTime=c.rounds*c.interval;
-
-    // Completed rounds are credited only AFTER the interval ends.
-    const shouldBeCompleted=Math.min(Math.floor(elapsed/c.interval),c.rounds);
-    if(shouldBeCompleted>completedRounds){
-      completedRounds=shouldBeCompleted;
-      if(completedRounds<c.rounds){tone(880,.11,.12);vibrate(80)}
-    }
-
-    maybeWarn(c);
-
-    if(elapsed>=totalTime){
-      elapsed=totalTime;
-      completedRounds=c.rounds;
-      running=false;
-      tone(1100,.25,.15);vibrate([120,60,120]);
-      draw();
-      if(!autoSaved){saveWorkout(true);autoSaved=true}
-      return;
-    }
-
-    draw();
-    raf=requestAnimationFrame(frame);
-  }
-
-  $('start').onclick=async()=>{
-    if(running)return;
-    ensureAudio();
-    if(!started){
-      await startCountdown();
-      started=true;elapsed=0;completedRounds=0;autoSaved=false;
-    }
-    running=true;last=null;draw();raf=requestAnimationFrame(frame);
-  };
-
-  $('pause').onclick=()=>{
-    running=false;last=null;if(raf)cancelAnimationFrame(raf);draw();
-  };
-
-  $('reset').onclick=()=>{
-    running=false;started=false;elapsed=0;last=null;completedRounds=0;autoSaved=false;
-    if(raf)cancelAnimationFrame(raf);draw();
-  };
-
-  function getLogs(){try{return JSON.parse(localStorage.getItem('emom-reps-log-v3')||'[]')}catch(e){return[]}}
-  function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-  function saveWorkout(auto=false){
-    const c=cfg(), repsDone=Math.min(completedRounds*c.reps,c.target);
-    if(repsDone<=0){if(!auto)alert('Noch keine Runde abgeschlossen.');return}
-    const logs=getLogs();
-    logs.push({date:new Date().toISOString(),name:$('exercise').value.trim()||'Training',reps:repsDone,rounds:completedRounds,planned:c.target});
-    localStorage.setItem('emom-reps-log-v3',JSON.stringify(logs));
-    renderStats();
-    if(!auto) alert(`${repsDone} Reps gespeichert.`);
-  }
-  $('save').onclick=()=>saveWorkout(false);
-
-  function renderStats(){
-    const logs=getLogs(), start=weekStart(), totals={};
-    logs.filter(x=>new Date(x.date)>=start).forEach(x=>totals[x.name]=(totals[x.name]||0)+x.reps);
-    const entries=Object.entries(totals);
-    $('week').innerHTML=entries.length?entries.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
-
-    const recent=logs.slice(-6).reverse();
-    $('history').innerHTML=recent.length?recent.map(x=>{
-      const d=new Date(x.date);
-      return `<div class="historyItem"><span>${x.name}<br><span class="hint">${d.toLocaleDateString('de-DE')} · ${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`;
-    }).join(''):'Noch kein Training gespeichert.';
-  }
-
-  document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{
-    if(started)return;
-    $('exercise').value=b.dataset.name;
-    $('reps').value=b.dataset.reps;
-    $('interval').value=b.dataset.int;
-    $('duration').value=b.dataset.dur;
-    draw();
-  });
-
-  ['reps','interval','duration','exercise'].forEach(id=>$(id).addEventListener('input',()=>{if(!started){elapsed=0;completedRounds=0}draw()}));
-
-  draw();renderStats();
-  if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
-</main>
 </body>
 </html>
