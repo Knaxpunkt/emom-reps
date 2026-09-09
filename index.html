@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V4.7</title>
+<title>EMOM Reps V4.8</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -246,23 +246,21 @@ const defaultPresets=[
  {id:'plank',name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
 ];
 function getPresets(){
- try{
-   const v=JSON.parse(localStorage.getItem('emom-presets-v46'));
-   if(Array.isArray(v)&&v.length) return v;
- }catch(e){}
- // migrate previous customisations if available
- try{
-   const old=JSON.parse(localStorage.getItem('emom-presets-v43')||localStorage.getItem('emom-presets-v42')||'null');
-   if(Array.isArray(old)&&old.length){
-     const merged=old.map((x,i)=>({...x,id:x.id||('migrated-'+i),builtin:defaultPresets.some(d=>d.name.toLowerCase()===String(x.name).toLowerCase())}));
-     localStorage.setItem('emom-presets-v46',JSON.stringify(merged));
-     return merged;
-   }
- }catch(e){}
- localStorage.setItem('emom-presets-v46',JSON.stringify(defaultPresets));
- return defaultPresets;
+  try{
+    const raw=localStorage.getItem('emom-presets-v48');
+    if(raw){
+      const v=JSON.parse(raw);
+      if(Array.isArray(v) && v.length) return v;
+    }
+  }catch(e){}
+  const fresh=defaultPresets.map(x=>({...x}));
+  localStorage.setItem('emom-presets-v48',JSON.stringify(fresh));
+  return fresh;
 }
-function setPresets(p){localStorage.setItem('emom-presets-v46',JSON.stringify(p));renderPresets()}
+function setPresets(p){
+  localStorage.setItem('emom-presets-v48',JSON.stringify(p));
+  renderPresets();
+}
 function iconSvg(type){
  const svg=(body)=>`<svg class="exerciseSvg" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
  const fill=`fill="white"`;
@@ -281,9 +279,9 @@ function iconSvg(type){
 }
 let editingPresetId=null;
 function renderPresets(){
- const p=getPresets();const g=$('presetGrid');g.innerHTML='';
+ const p=getPresets(), g=$('presetGrid'); g.innerHTML='';
  p.forEach(x=>{
-  const d=document.createElement('div');d.className='presetCard';
+  const d=document.createElement('div'); d.className='presetCard';
   const unit=x.unit||'Reps';
   d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div>
     <div class="presetText">
@@ -291,13 +289,8 @@ function renderPresets(){
       <div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div>
       ${x.builtin?'':'<span class="badge">EIGENES PRESET</span>'}
     </div>
-    <button class="editPreset" aria-label="Preset bearbeiten">✎</button>
     <div class="arrow">›</div>`;
-  d.onclick=(ev)=>{
-    if(ev.target.closest('.editPreset')) return;
-    setWorkout(x.name,x.reps,x.interval,x.rounds);
-  };
-  d.querySelector('.editPreset').onclick=(ev)=>{ev.stopPropagation();openPresetEditor(x.id)};
+  d.onclick=()=>openPresetEditor(x.id);
   g.appendChild(d);
  });
 }
@@ -404,12 +397,12 @@ $('savePreset').onclick=()=>{
 };
 
 $('testSound').onclick=async()=>{const ok=await audio();if(ok){tone(880,.18,.14);setTimeout(()=>tone(1100,.18,.14),260)}else{alert('Audio konnte auf diesem Gerät nicht aktiviert werden.');}};
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v46',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v46')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v48',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v48')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v46-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v48-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v46-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v48-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
@@ -423,6 +416,23 @@ function updateEditTarget(){
  const r=+$('editReps').value||0, n=+$('editRounds').value||0;
  $('editTarget').value=r*n;
 }
+
+function currentEditValues(){
+ return {
+   name:$('editName').value.trim()||'Workout',
+   reps:Math.max(1,+$('editReps').value||1),
+   interval:Math.max(5,+$('editInterval').value||30),
+   rounds:Math.max(1,+$('editRounds').value||1)
+ };
+}
+$('startPreset').onclick=()=>{
+ const v=currentEditValues();
+ // do not require saving first; start immediately with what is on screen
+ $('presetModal').classList.remove('show');
+ editingPresetId=null;
+ setWorkout(v.name,v.reps,v.interval,v.rounds);
+};
+
 function openPresetEditor(id){
  const p=getPresets(), x=p.find(z=>z.id===id);
  if(!x)return;
@@ -440,14 +450,10 @@ $('cancelEdit').onclick=()=>{$('presetModal').classList.remove('show');editingPr
 $('saveEdit').onclick=()=>{
  let p=getPresets(), i=p.findIndex(z=>z.id===editingPresetId);
  if(i<0)return;
- p[i]={...p[i],
-   name:$('editName').value.trim()||p[i].name,
-   reps:Math.max(1,+$('editReps').value||1),
-   interval:Math.max(5,+$('editInterval').value||30),
-   rounds:Math.max(1,+$('editRounds').value||1)
- };
+ const v=currentEditValues();
+ p[i]={...p[i],...v};
  setPresets(p);
- $('presetModal').classList.remove('show');editingPresetId=null;
+ $('presetModal').classList.remove('show'); editingPresetId=null;
 };
 $('deletePreset').onclick=()=>{
  let p=getPresets(), x=p.find(z=>z.id===editingPresetId);
@@ -467,7 +473,7 @@ if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWork
 
 <div id="presetModal" class="modalBackdrop">
   <div class="modal">
-    <div class="modalTitle">Preset bearbeiten</div>
+    <div class="modalTitle">Preset</div>
     <label>Übung</label>
     <input id="editName" type="text">
     <div class="grid" style="margin-top:12px">
@@ -476,9 +482,10 @@ if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWork
       <div><label>Runden</label><input id="editRounds" type="number" min="1"></div>
       <div><label>Ziel-Reps</label><input id="editTarget" disabled></div>
     </div>
+    <button class="primary" id="startPreset" style="margin-top:14px">WORKOUT STARTEN</button>
     <div class="modalActions">
       <button class="secondary" id="cancelEdit">ABBRECHEN</button>
-      <button class="primary" id="saveEdit">SPEICHERN</button>
+      <button class="secondary" id="saveEdit">ÄNDERUNGEN SPEICHERN</button>
     </div>
     <button class="deleteBtn" id="deletePreset">PRESET LÖSCHEN</button>
   </div>
