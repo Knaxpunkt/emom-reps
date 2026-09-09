@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V4.6</title>
+<title>EMOM Reps V4.7</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -130,6 +130,17 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   .presetMeta{font-size:10px}
 }
 
+
+/* Keep short exercise names on one line; long names may wrap. */
+.presetTitle.singleLine{white-space:nowrap;font-size:clamp(13px,3.7vw,18px)}
+@media(max-width:430px){
+  .presetCard{gap:7px;padding-right:28px}
+  .presetIcon{min-width:36px}
+  .exerciseSvg{width:40px;height:40px}
+  .presetTitle.singleLine{font-size:14px}
+  .arrow{right:7px}
+}
+
 </style>
 </head>
 <body class="theme-gym">
@@ -179,7 +190,8 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   </div>
   <div class="card">
     <div class="settingsRow"><div><strong>3-2-1 Start</strong><div class="small">Echte 3 Sekunden</div></div><input id="countdown" type="checkbox" checked></div>
-    <div class="settingsRow"><div><strong>Runden-Sound</strong></div><input id="sound" type="checkbox" checked></div>
+    <div class="settingsRow"><div><strong>Runden-Sound</strong><div class="small">Ton bei neuer Runde</div></div><input id="sound" type="checkbox" checked></div>
+    <button class="secondary" id="testSound" style="margin-top:10px">🔊 TESTTON</button>
     <div class="settingsRow"><div><strong>Vorwarnung</strong><div class="small">3, 2, 1 vor neuer Runde</div></div><input id="warning" type="checkbox" checked></div>
     <div class="settingsRow"><div><strong>Vibration</strong><div class="small">Wenn unterstützt</div></div><input id="vibration" type="checkbox" checked></div>
   </div>
@@ -275,7 +287,7 @@ function renderPresets(){
   const unit=x.unit||'Reps';
   d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div>
     <div class="presetText">
-      <div class="presetTitle">${x.name.toUpperCase()}</div>
+      <div class="presetTitle ${x.name.length<=12?'singleLine':''}">${x.name.toUpperCase()}</div>
       <div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div>
       ${x.builtin?'':'<span class="badge">EIGENES PRESET</span>'}
     </div>
@@ -305,8 +317,34 @@ function renderWorkout(){
  $('clock').textContent=fmt(rem);$('round').textContent=`Runde ${active} / ${workout.rounds}`;$('live').textContent=`${completed*workout.reps} / ${target()}`;$('now').textContent=`Jetzt: ${workout.reps} ${workout.name}`;
  const p=started?(elapsed%workout.interval)/workout.interval:0;$('ringProgress').style.strokeDashoffset=C*(1-p);
 }
-function audio(){try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}}
-function tone(freq=880,dur=.09,gain=.11){if(!$('sound').checked&&freq>=700)return;try{audio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.start();o.stop(audioCtx.currentTime+dur)}catch(e){}}
+async function audio(){
+ try{
+   audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+   if(audioCtx.state==='suspended') await audioCtx.resume();
+
+   // iOS/Safari: play a tiny silent buffer on the direct user tap to unlock audio.
+   const buffer=audioCtx.createBuffer(1,1,22050);
+   const src=audioCtx.createBufferSource();
+   src.buffer=buffer;
+   src.connect(audioCtx.destination);
+   src.start(0);
+   return true;
+ }catch(e){return false}
+}
+function tone(freq=880,dur=.09,gain=.11){
+ if(!$('sound').checked && freq>=700)return;
+ try{
+   if(!audioCtx || audioCtx.state!=='running') return;
+   const now=audioCtx.currentTime;
+   const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+   o.type='sine';
+   o.connect(g);g.connect(audioCtx.destination);
+   o.frequency.setValueAtTime(freq,now);
+   g.gain.setValueAtTime(Math.max(.0001,gain),now);
+   g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+   o.start(now);o.stop(now+dur);
+ }catch(e){}
+}
 function vib(p=70){if($('vibration').checked&&navigator.vibrate)navigator.vibrate(p)}
 
 /* Exactly three seconds: 3 shown from 0-1s, 2 from 1-2s, 1 from 2-3s, GO at 3s. */
@@ -328,7 +366,13 @@ function frame(ts){
  if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
  renderWorkout();raf=requestAnimationFrame(frame)
 }
-$('start').onclick=async()=>{if(running)return;audio();if(!started){await countdown();started=true}running=true;last=null;renderWorkout();raf=requestAnimationFrame(frame)}
+$('start').onclick=async()=>{
+ if(running)return;
+ const ok=await audio();
+ if(ok && $('sound').checked) tone(700,.055,.055); // confirms iPhone audio is unlocked
+ if(!started){await countdown();started=true}
+ running=true;last=null;renderWorkout();raf=requestAnimationFrame(frame)
+}
 $('pause').onclick=()=>{running=false;last=null;if(raf)cancelAnimationFrame(raf);renderWorkout()}
 $('resetWorkout').onclick=()=>{
   running=false;
@@ -359,6 +403,7 @@ $('savePreset').onclick=()=>{
  alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');
 };
 
+$('testSound').onclick=async()=>{const ok=await audio();if(ok){tone(880,.18,.14);setTimeout(()=>tone(1100,.18,.14),260)}else{alert('Audio konnte auf diesem Gerät nicht aktiviert werden.');}};
 document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v46',b.dataset.theme)})
 document.body.className='theme-'+(localStorage.getItem('emom-theme-v46')||'gym');
 
