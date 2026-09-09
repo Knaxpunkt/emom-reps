@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps</title>
+<title>EMOM Reps V4.5</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -19,33 +19,31 @@
   --muted:#aaaab2;
 }
 html,body{margin:0;background:#09090b;color:#fff;min-height:100%}
-body{min-height:100dvh;overflow-x:hidden;position:relative}
-
-/* Responsive real-image themes. Each file contains only the background. */
-body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:-2}
-body::before{
+body{
+  min-height:100dvh;
+  overflow-x:hidden;
+  background-color:#09090b;
+  background-image:var(--bg-image);
+  background-size:cover;
   background-position:center center;
   background-repeat:no-repeat;
-  background-size:cover;
-  transform:translateZ(0);
+  background-attachment:scroll;
 }
-body::after{z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,.66))}
-body.theme-gym::before{background-image:url('./gym.jpg')}
-body.theme-prison::before{background-image:url('./prison.jpg')}
-body.theme-concrete::before{background-image:url('./concrete.jpg')}
-body.theme-dark::before{background-image:url('./dark.jpg')}
-body.theme-minimal::before{background-image:url('./minimal.jpg')}
-body.theme-minimal::after{background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.24))}
+body.theme-gym{--bg-image:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url('./gym.jpg')}
+body.theme-prison{--bg-image:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.34)),url('./prison.jpg')}
+body.theme-concrete{--bg-image:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.28)),url('./concrete.jpg')}
+body.theme-dark{--bg-image:url('./dark.jpg')}
+body.theme-minimal{--bg-image:url('./minimal.jpg')}
 
 main{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom))}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .brand{font-size:27px;font-weight:950;letter-spacing:-.02em}.tag{font-size:10px;color:#ddd;letter-spacing:.08em}
 .iconBtn{width:auto;padding:10px 12px;margin:0;border-radius:14px;background:rgba(15,15,18,.78);color:#fff;border:1px solid var(--panel-border)}
-.card{background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--panel-border);border-radius:22px;padding:17px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.22)}
+.card{background:rgba(12,13,16,.56);backdrop-filter:blur(12px) saturate(115%);-webkit-backdrop-filter:blur(12px) saturate(115%);border:1px solid var(--panel-border);border-radius:22px;padding:17px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.22)}
 .sectionTitle{font-size:12px;letter-spacing:.08em;color:#c8c8ce;margin:0 0 9px}
-.presetGrid{display:grid;gap:10px}
-.presetCard{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px;border-radius:18px;background:rgba(9,10,12,.84);border:1px solid rgba(255,255,255,.18);cursor:pointer}
-.presetIcon{font-size:27px;min-width:42px}.presetText{flex:1}.presetTitle{font-size:21px;font-weight:900;line-height:1.05}.presetMeta{font-size:12px;color:#d1d1d6;margin-top:5px}.arrow{font-size:28px;color:#ddd}
+.presetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.presetCard{display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:132px;padding:15px;border-radius:18px;background:rgba(9,10,12,.60);border:1px solid rgba(255,255,255,.18);cursor:pointer}
+.presetIcon{font-size:25px;min-width:31px}.presetText{flex:1}.presetTitle{font-size:clamp(15px,4vw,19px);font-weight:900;line-height:1.05;letter-spacing:-.015em}.presetMeta{font-size:11px;color:#d7d7dc;margin-top:6px;line-height:1.25}.arrow{font-size:25px;color:#ddd;flex:0 0 auto}
 button{touch-action:manipulation;width:100%;border:0;border-radius:16px;padding:16px;font-size:18px;font-weight:800;margin-top:10px;cursor:pointer}
 .primary{background:var(--accent);color:#111}.secondary{background:rgba(28,28,33,.86);color:#fff;border:1px solid rgba(255,255,255,.14)}.danger{background:transparent;color:#ff858b;border:1px solid rgba(255,120,130,.35)}
 .hidden{display:none!important}
@@ -74,6 +72,21 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 /* finish + stats */
 .finishCard{text-align:center;padding:26px 18px}.finishTitle{font-size:43px;font-weight:950}.finishStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.finishStats div{padding:12px 6px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(10,10,13,.72)}.finishNum{font-size:23px;font-weight:900}.finishLab{font-size:11px;color:#bbb;margin-top:3px}
 .historyItem{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.historyItem:first-child{border-top:0}
+
+@media(max-width:430px){
+  main{padding-left:14px;padding-right:14px}
+  .card{border-radius:20px}
+  .presetCard{min-height:126px;padding:13px}
+  .presetTitle{font-size:16px}
+  .presetMeta{font-size:10.5px}
+  .presetIcon{font-size:23px;min-width:27px}
+}
+
+
+.exerciseSvg{width:42px;height:42px;display:block;stroke:#fff;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.presetIcon{display:flex;align-items:center;justify-content:center}
+@media(max-width:430px){.exerciseSvg{width:38px;height:38px}}
+
 </style>
 </head>
 <body class="theme-gym">
@@ -87,7 +100,7 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   <div class="card">
     <div class="sectionTitle">SCHNELLSTART</div>
     <div id="presetGrid" class="presetGrid"></div>
-    <button class="secondary" id="customBtn">☷ EIGENES WORKOUT</button>
+    <button class="secondary" id="customBtn" style="margin-top:12px">☷ EIGENES WORKOUT</button>
   </div>
   <div class="card"><div class="sectionTitle">DIESE WOCHE</div><div id="week">Noch kein Training gespeichert.</div></div>
   <div class="card"><div class="sectionTitle">LETZTE TRAININGS</div><div id="history">Noch kein Training gespeichert.</div></div>
@@ -168,19 +181,39 @@ const screens=['homeScreen','customScreen','settingsScreen','workoutScreen','fin
 const C=2*Math.PI*52;$('ringProgress').style.strokeDasharray=C;$('ringProgress').style.strokeDashoffset=C;
 
 const defaultPresets=[
- {name:'Push-ups',icon:'⬇︎',reps:8,interval:30,rounds:20},
- {name:'Australian Pull-ups',icon:'↟',reps:10,interval:30,rounds:20},
- {name:'Squats',icon:'◒',reps:10,interval:30,rounds:20},
- {name:'High Knee Raises',icon:'⌁',reps:8,interval:30,rounds:20},
- {name:'High Leg Raises',icon:'⌃',reps:8,interval:30,rounds:20}
+ {name:'Push-ups',icon:'pushup',reps:8,interval:30,rounds:20},
+ {name:'Pull-ups',icon:'pullup',reps:6,interval:30,rounds:20},
+ {name:'Australian Pull-ups',icon:'row',reps:10,interval:30,rounds:20},
+ {name:'Squats',icon:'squat',reps:10,interval:30,rounds:20},
+ {name:'High Knee Raises',icon:'kneeraise',reps:8,interval:30,rounds:20},
+ {name:'High Leg Raises',icon:'legraise',reps:8,interval:30,rounds:20},
+ {name:'Dips',icon:'dip',reps:6,interval:30,rounds:20},
+ {name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.'}
 ];
 function getPresets(){try{return JSON.parse(localStorage.getItem('emom-presets-v43'))||defaultPresets}catch(e){return defaultPresets}}
 function setPresets(p){localStorage.setItem('emom-presets-v43',JSON.stringify(p));renderPresets()}
+function iconSvg(type){
+ const base=(body)=>`<svg class="exerciseSvg" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
+ const head=`<circle cx="32" cy="15" r="5"></circle>`;
+ const bar=`<line x1="12" y1="8" x2="52" y2="8"></line>`;
+ const icons={
+  pushup:base(`<circle cx="47" cy="34" r="4"></circle><line x1="43" y1="37" x2="30" y2="39"></line><line x1="30" y1="39" x2="18" y2="34"></line><line x1="18" y1="34" x2="10" y2="44"></line><line x1="30" y1="39" x2="26" y2="51"></line><line x1="43" y1="37" x2="50" y2="49"></line>`),
+  pullup:base(`${bar}${head}<line x1="28" y1="20" x2="24" y2="34"></line><line x1="36" y1="20" x2="40" y2="34"></line><line x1="24" y1="34" x2="18" y2="8"></line><line x1="40" y1="34" x2="46" y2="8"></line><line x1="32" y1="20" x2="32" y2="44"></line><line x1="32" y1="44" x2="25" y2="57"></line><line x1="32" y1="44" x2="39" y2="57"></line>`),
+  row:base(`${bar}<circle cx="20" cy="28" r="4"></circle><line x1="24" y1="31" x2="35" y2="36"></line><line x1="35" y1="36" x2="48" y2="45"></line><line x1="35" y1="36" x2="42" y2="20"></line><line x1="42" y1="20" x2="45" y2="8"></line><line x1="48" y1="45" x2="56" y2="50"></line>`),
+  squat:base(`${head}<line x1="32" y1="20" x2="29" y2="35"></line><line x1="29" y1="35" x2="18" y2="44"></line><line x1="29" y1="35" x2="42" y2="42"></line><line x1="18" y1="44" x2="12" y2="55"></line><line x1="42" y1="42" x2="52" y2="50"></line><line x1="26" y1="25" x2="16" y2="29"></line><line x1="38" y1="25" x2="49" y2="29"></line>`),
+  kneeraise:base(`${bar}${head}<line x1="32" y1="20" x2="32" y2="39"></line><line x1="25" y1="22" x2="18" y2="8"></line><line x1="39" y1="22" x2="46" y2="8"></line><line x1="32" y1="39" x2="21" y2="47"></line><line x1="21" y1="47" x2="31" y2="52"></line><line x1="32" y1="39" x2="40" y2="54"></line>`),
+  legraise:base(`${bar}${head}<line x1="32" y1="20" x2="32" y2="40"></line><line x1="25" y1="22" x2="18" y2="8"></line><line x1="39" y1="22" x2="46" y2="8"></line><line x1="32" y1="40" x2="52" y2="40"></line><line x1="32" y1="40" x2="50" y2="47"></line>`),
+  dip:base(`<line x1="13" y1="18" x2="13" y2="57"></line><line x1="51" y1="18" x2="51" y2="57"></line>${head}<line x1="32" y1="20" x2="32" y2="39"></line><line x1="24" y1="25" x2="13" y2="31"></line><line x1="40" y1="25" x2="51" y2="31"></line><line x1="32" y1="39" x2="26" y2="54"></line><line x1="32" y1="39" x2="38" y2="54"></line>`),
+  plank:base(`<circle cx="48" cy="31" r="4"></circle><line x1="44" y1="34" x2="30" y2="36"></line><line x1="30" y1="36" x2="15" y2="34"></line><line x1="15" y1="34" x2="8" y2="45"></line><line x1="30" y1="36" x2="26" y2="48"></line><line x1="44" y1="34" x2="50" y2="45"></line>`)
+ };
+ return icons[type]||base(`<circle cx="32" cy="32" r="12"></circle>`);
+}
 function renderPresets(){
  const p=getPresets();const g=$('presetGrid');g.innerHTML='';
  p.forEach(x=>{
   const d=document.createElement('div');d.className='presetCard';
-  d.innerHTML=`<div class="presetIcon">${x.icon||'•'}</div><div class="presetText"><div class="presetTitle">${x.name.toUpperCase()}</div><div class="presetMeta">${x.reps} Reps · ${x.interval} Sek. · ${x.rounds} Runden</div></div><div class="arrow">›</div>`;
+  const unit=x.unit||'Reps';
+  d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div><div class="presetText"><div class="presetTitle">${x.name.toUpperCase()}</div><div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div></div><div class="arrow">›</div>`;
   d.onclick=()=>setWorkout(x.name,x.reps,x.interval,x.rounds);g.appendChild(d);
  });
 }
@@ -242,7 +275,7 @@ $('muteBtn').onclick=()=>{$('sound').checked=!$('sound').checked;$('muteBtn').te
 $('customBtn').onclick=()=>show('customScreen');$('openSettings').onclick=()=>show('settingsScreen');document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('homeScreen'));
 function customVals(){return {name:$('exercise').value.trim()||'Workout',reps:+$('reps').value||1,interval:+$('interval').value||30,rounds:+$('roundsInput').value||1}}
 $('prepareCustom').onclick=()=>{const x=customVals();setWorkout(x.name,x.reps,x.interval,x.rounds)}
-$('savePreset').onclick=()=>{const x=customVals();let p=getPresets();const i=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());if(i>=0){p[i]={...p[i],...x}}else{p.push({...x,icon:'•'})}setPresets(p);alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');}
+$('savePreset').onclick=()=>{const x=customVals();let p=getPresets();const i=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());if(i>=0){p[i]={...p[i],...x}}else{p.push({...x,icon:'generic'})}setPresets(p);alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');}
 ;['reps','roundsInput'].forEach(id=>$(id).addEventListener('input',()=>{$('target').value=(+$('reps').value||0)*(+$('roundsInput').value||0)}));
 
 document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v43',b.dataset.theme)})
