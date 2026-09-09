@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V5.1</title>
+<title>EMOM Reps V5.3</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -141,6 +141,17 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   .arrow{right:7px}
 }
 
+
+.photoIcon{
+  width:64px;min-width:64px;height:64px;border-radius:14px;overflow:hidden;
+  background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08)
+}
+.photoIcon img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:430px){
+  .photoIcon{width:56px;min-width:56px;height:56px;border-radius:12px}
+  .presetCard{padding-left:10px}
+}
+
 </style>
 </head>
 <body class="theme-gym">
@@ -153,7 +164,42 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   </div>
   <div class="card">
     <div class="sectionTitle">SCHNELLSTART</div>
-    <div id="presetGrid" class="presetGrid"></div>
+    
+<div id="presetGrid" class="presetGrid">
+  <div class="presetCard" data-preset-id="pushups">
+    <div class="presetIcon photoIcon"><img src="./icon_pushups.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle singleLine">PUSH-UPS</div><div class="presetMeta">8 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="pullups">
+    <div class="presetIcon photoIcon"><img src="./icon_pullups.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle singleLine">PULL-UPS</div><div class="presetMeta">6 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="australian">
+    <div class="presetIcon photoIcon"><img src="./icon_australian.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle">AUSTRALIAN PULL-UPS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="squats">
+    <div class="presetIcon photoIcon"><img src="./icon_squats.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle singleLine">SQUATS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="kneeraises">
+    <div class="presetIcon photoIcon"><img src="./icon_knee.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle">HIGH KNEE RAISES</div><div class="presetMeta">8 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="legraises">
+    <div class="presetIcon photoIcon"><img src="./icon_leg.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle">HIGH LEG RAISES</div><div class="presetMeta">8 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="dips">
+    <div class="presetIcon photoIcon"><img src="./icon_dips.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle singleLine">DIPS</div><div class="presetMeta">6 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+  <div class="presetCard" data-preset-id="plank">
+    <div class="presetIcon photoIcon"><img src="./icon_plank.jpg" alt=""></div>
+    <div class="presetText"><div class="presetTitle singleLine">PLANK</div><div class="presetMeta">30 Sek. · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+  </div>
+</div>
+
     <button class="secondary" id="customBtn" style="margin-top:12px">☷ EIGENES WORKOUT</button>
   </div>
   <div class="card"><div class="sectionTitle">DIESE WOCHE</div><div id="week">Noch kein Training gespeichert.</div></div>
@@ -249,6 +295,11 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 </div>
 
 
+
+<audio id="audioRound" src="./round.wav" preload="auto" playsinline></audio>
+<audio id="audioWarning" src="./warning.wav" preload="auto" playsinline></audio>
+<audio id="audioFinish" src="./finish.wav" preload="auto" playsinline></audio>
+
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
@@ -256,48 +307,57 @@ const screens=['homeScreen','customScreen','settingsScreen','workoutScreen','fin
 const C=2*Math.PI*52;$('ringProgress').style.strokeDasharray=C;$('ringProgress').style.strokeDashoffset=C;
 
 const defaultPresets=[
- {id:'pushups',name:'Push-ups',icon:'pushup',reps:8,interval:30,rounds:20,builtin:true},
- {id:'pullups',name:'Pull-ups',icon:'pullup',reps:6,interval:30,rounds:20,builtin:true},
- {id:'australian',name:'Australian Pull-ups',icon:'row',reps:10,interval:30,rounds:20,builtin:true},
- {id:'squats',name:'Squats',icon:'squat',reps:10,interval:30,rounds:20,builtin:true},
- {id:'kneeraises',name:'High Knee Raises',icon:'kneeraise',reps:8,interval:30,rounds:20,builtin:true},
- {id:'legraises',name:'High Leg Raises',icon:'legraise',reps:8,interval:30,rounds:20,builtin:true},
- {id:'dips',name:'Dips',icon:'dip',reps:6,interval:30,rounds:20,builtin:true},
- {id:'plank',name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
+ {id:'pushups',name:'Push-ups',icon:'pushup',image:'icon_pushups.jpg',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'pullups',name:'Pull-ups',icon:'pullup',image:'icon_pullups.jpg',reps:6,interval:30,rounds:20,builtin:true},
+ {id:'australian',name:'Australian Pull-ups',icon:'row',image:'icon_australian.jpg',reps:10,interval:30,rounds:20,builtin:true},
+ {id:'squats',name:'Squats',icon:'squat',image:'icon_squats.jpg',reps:10,interval:30,rounds:20,builtin:true},
+ {id:'kneeraises',name:'High Knee Raises',icon:'kneeraise',image:'icon_knee.jpg',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'legraises',name:'High Leg Raises',icon:'legraise',image:'icon_leg.jpg',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'dips',name:'Dips',icon:'dip',image:'icon_dips.jpg',reps:6,interval:30,rounds:20,builtin:true},
+ {id:'plank',name:'Plank',icon:'plank',image:'icon_plank.jpg',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
 ];
-function normalizePresets(saved){
-  const list=Array.isArray(saved)?saved:[];
-  const byId=new Map(list.filter(x=>x&&x.id).map(x=>[x.id,x]));
-  const builtins=defaultPresets.map(d=>{
-    const s=byId.get(d.id);
-    return s ? {...d,...s,id:d.id,builtin:true,icon:d.icon,unit:d.unit} : {...d};
-  });
-  const custom=list.filter(x=>x && !defaultPresets.some(d=>d.id===x.id))
-    .map((x,i)=>({
-      id:x.id||('custom-'+Date.now()+'-'+i),
-      name:x.name||'Workout',
-      icon:x.icon||'generic',
-      reps:Math.max(1,+x.reps||1),
-      interval:Math.max(5,+x.interval||30),
-      rounds:Math.max(1,+x.rounds||1),
-      builtin:false
-    }));
-  return [...builtins,...custom];
+
+function playMediaAudio(kind){
+  if(!$('sound').checked) return;
+  const map={round:'audioRound',warning:'audioWarning',finish:'audioFinish'};
+  const el=$(map[kind]||'audioRound');
+  if(!el) return;
+  try{
+    el.pause();
+    el.currentTime=0;
+    const pr=el.play();
+    if(pr && pr.catch) pr.catch(()=>{});
+  }catch(e){}
 }
+async function unlockMediaAudio(){
+  // iOS requires audio to be unlocked from a direct user gesture.
+  const ids=['audioRound','audioWarning','audioFinish'];
+  for(const id of ids){
+    const a=$(id);
+    if(!a) continue;
+    try{
+      a.muted=true;
+      a.currentTime=0;
+      await a.play();
+      a.pause();
+      a.currentTime=0;
+      a.muted=false;
+    }catch(e){
+      try{a.muted=false}catch(_){}
+    }
+  }
+}
+
 function getPresets(){
   let saved=[];
-  try{
-    const fresh=localStorage.getItem('emom-presets-v51');
-    const legacy=localStorage.getItem('emom-presets-v49');
-    saved=JSON.parse(fresh || legacy || '[]');
-  }catch(e){}
-  const merged=normalizePresets(saved);
-  try{localStorage.setItem('emom-presets-v51',JSON.stringify(merged))}catch(e){}
-  return merged;
+  try{ saved=JSON.parse(localStorage.getItem('emom-presets-v53')||'[]'); }catch(e){}
+  const overrides=new Map((Array.isArray(saved)?saved:[]).filter(x=>x&&x.id).map(x=>[x.id,x]));
+  const builtins=defaultPresets.map(d=>({...d,...(overrides.get(d.id)||{}),id:d.id,builtin:true,icon:d.icon,unit:d.unit}));
+  const custom=(Array.isArray(saved)?saved:[]).filter(x=>x && !defaultPresets.some(d=>d.id===x.id));
+  return [...builtins,...custom];
 }
 function setPresets(p){
-  const merged=normalizePresets(p);
-  localStorage.setItem('emom-presets-v51',JSON.stringify(merged));
+  localStorage.setItem('emom-presets-v53',JSON.stringify(p));
   renderPresets();
 }
 function iconSvg(type){
@@ -318,20 +378,39 @@ function iconSvg(type){
 }
 let editingPresetId=null;
 function renderPresets(){
- const p=getPresets(), g=$('presetGrid'); g.innerHTML='';
- p.forEach(x=>{
-  const d=document.createElement('div'); d.className='presetCard';
-  const unit=x.unit||'Reps';
-  d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div>
-    <div class="presetText">
-      <div class="presetTitle ${x.name.length<=12?'singleLine':''}">${x.name.toUpperCase()}</div>
-      <div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div>
-      ${x.builtin?'':'<span class="badge">EIGENES PRESET</span>'}
-    </div>
-    <div class="arrow">›</div>`;
-  d.onclick=()=>openPresetEditor(x.id);
-  g.appendChild(d);
- });
+  const presets=getPresets();
+  const g=$('presetGrid');
+  const builtinIds=new Set(defaultPresets.map(x=>x.id));
+
+  // Update the 8 always-visible built-in cards.
+  defaultPresets.forEach(def=>{
+    const x=presets.find(p=>p.id===def.id) || def;
+    const card=g.querySelector(`[data-preset-id="${def.id}"]`);
+    if(!card) return;
+    const unit=x.unit||'Reps';
+    card.querySelector('.presetTitle').textContent=x.name.toUpperCase();
+    card.querySelector('.presetMeta').textContent=`${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden`;
+    card.onclick=()=>openPresetEditor(def.id);
+  });
+
+  // Remove only previously-rendered custom cards.
+  g.querySelectorAll('.presetCard[data-custom="true"]').forEach(el=>el.remove());
+
+  // Append custom presets.
+  presets.filter(x=>!builtinIds.has(x.id)).forEach(x=>{
+    const d=document.createElement('div');
+    d.className='presetCard';
+    d.dataset.custom='true';
+    d.dataset.presetId=x.id;
+    d.innerHTML=`<div class="presetIcon ${x.image?'photoIcon':''}">${x.image?`<img src="./${x.image}" alt="">`:iconSvg(x.icon||'generic')}</div>
+      <div class="presetText">
+        <div class="presetTitle ${x.name.length<=12?'singleLine':''}">${x.name.toUpperCase()}</div>
+        <div class="presetMeta">${x.reps} Reps · ${x.interval} Sek. · ${x.rounds} Runden</div>
+        <span class="badge">EIGENES PRESET</span>
+      </div><div class="arrow">›</div>`;
+    d.onclick=()=>openPresetEditor(x.id);
+    g.appendChild(d);
+  });
 }
 
 let workout={name:'Push-ups',reps:8,interval:30,rounds:20};
@@ -383,22 +462,23 @@ function vib(p=70){if($('vibration').checked&&navigator.vibrate)navigator.vibrat
 function countdown(){
  if(!$('countdown').checked)return Promise.resolve();
  return new Promise(res=>{
-   const ov=$('countdownOverlay');ov.style.display='flex';ov.textContent='3';tone(520,.07,.09);
-   setTimeout(()=>{ov.textContent='2';tone(520,.07,.09)},1000);
-   setTimeout(()=>{ov.textContent='1';tone(520,.07,.09)},2000);
-   setTimeout(()=>{ov.textContent='GO';tone(980,.15,.14);vib([70,40,70]);setTimeout(()=>{ov.style.display='none';res()},180)},3000);
+   const ov=$('countdownOverlay');ov.style.display='flex';ov.textContent='3';tone(520,.07,.09);playMediaAudio('warning');
+   setTimeout(()=>{ov.textContent='2';tone(520,.07,.09);playMediaAudio('warning')},1000);
+   setTimeout(()=>{ov.textContent='1';tone(520,.07,.09);playMediaAudio('warning')},2000);
+   setTimeout(()=>{ov.textContent='GO';tone(980,.15,.14);playMediaAudio('round');vib([70,40,70]);setTimeout(()=>{ov.style.display='none';res()},180)},3000);
  });
 }
-function warn(){if(!$('warning').checked||!running)return;const rem=Math.ceil(workout.interval-(elapsed%workout.interval));if(rem<=3&&rem>=1&&rem!==lastWarn){lastWarn=rem;tone(430,.05,.06)}if(rem>3)lastWarn=null}
+function warn(){if(!$('warning').checked||!running)return;const rem=Math.ceil(workout.interval-(elapsed%workout.interval));if(rem<=3&&rem>=1&&rem!==lastWarn){lastWarn=rem;tone(430,.05,.06);playMediaAudio('warning')}if(rem>3)lastWarn=null}
 function frame(ts){
  if(!running)return;if(last===null)last=ts;elapsed+=(ts-last)/1000;last=ts;
  const should=Math.min(Math.floor(elapsed/workout.interval),workout.rounds);
- if(should>completed){completed=should;if(completed<workout.rounds){tone(880,.1,.11);vib(70)}}
+ if(should>completed){completed=should;if(completed<workout.rounds){tone(880,.1,.11);playMediaAudio('round');vib(70)}}
  warn();
- if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
+ if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);playMediaAudio('finish');vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
  renderWorkout();raf=requestAnimationFrame(frame)
 }
 $('start').onclick=async()=>{
+ await unlockMediaAudio();
  if(running)return;
  const ok=await audio();
  if(ok && $('sound').checked) tone(700,.055,.055); // confirms iPhone audio is unlocked
@@ -424,23 +504,24 @@ $('customBtn').onclick=()=>show('customScreen');$('openSettings').onclick=()=>sh
 function customVals(){return {name:$('exercise').value.trim()||'Workout',reps:+$('reps').value||1,interval:+$('interval').value||30,rounds:+$('roundsInput').value||1}}
 $('prepareCustom').onclick=()=>{const x=customVals();setWorkout(x.name,x.reps,x.interval,x.rounds)}
 $('savePreset').onclick=()=>{
- const x=customVals();let p=getPresets();
- const i=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());
- if(i>=0){
-   p[i]={...p[i],...x};
- }else{
-   p.push({...x,id:'custom-'+Date.now(),icon:'generic',builtin:false});
- }
- setPresets(p);
- alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');
+  const x=customVals();
+  let p=getPresets();
+  const existing=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());
+  if(existing>=0){
+    p[existing]={...p[existing],...x};
+  }else{
+    p.push({...x,id:'custom-'+Date.now(),icon:'generic',builtin:false});
+  }
+  setPresets(p);
+  alert(existing>=0?'Preset aktualisiert.':'Preset gespeichert.');
 };
 
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v51',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v51')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v53',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v53')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v51-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v53-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v51-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v53-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
@@ -486,15 +567,18 @@ function openPresetEditor(id){
 $('cancelEdit').onclick=()=>{$('presetModal').classList.remove('show');editingPresetId=null};
 ['editReps','editRounds'].forEach(id=>$(id).addEventListener('input',updateEditTarget));
 $('saveEdit').onclick=()=>{
- let p=getPresets(), i=p.findIndex(z=>z.id===editingPresetId);
- if(i<0)return;
- const v=currentEditValues();
- p[i]={...p[i],...v};
- setPresets(p);
- const btn=$('saveEdit');
- const old=btn.textContent;
- btn.textContent='✓ GESPEICHERT';
- setTimeout(()=>{btn.textContent=old;$('presetModal').classList.remove('show');editingPresetId=null},450);
+  let p=getPresets();
+  const i=p.findIndex(z=>z.id===editingPresetId);
+  if(i<0) return;
+  const v=currentEditValues();
+  p[i]={...p[i],...v};
+  setPresets(p);
+  $('saveEdit').textContent='✓ GESPEICHERT';
+  setTimeout(()=>{
+    $('saveEdit').textContent='ÄNDERUNGEN SPEICHERN';
+    $('presetModal').classList.remove('show');
+    editingPresetId=null;
+  },500);
 };
 $('deletePreset').onclick=()=>{
  let p=getPresets(), x=p.find(z=>z.id===editingPresetId);
