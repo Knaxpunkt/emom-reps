@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V5.3</title>
+<title>EMOM Reps V5.4</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -67,7 +67,7 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 #live{font-size:40px;font-weight:950;margin-top:4px}#doneLabel{font-size:12px;color:#ddd;letter-spacing:.04em}#now{font-size:18px;font-weight:800}
 
 /* real 3-sec countdown */
-#countdownOverlay{position:fixed;inset:0;display:none;z-index:60;align-items:center;justify-content:center;background:rgba(0,0,0,.80);font-size:120px;font-weight:950}
+#countdownOverlay{position:fixed;inset:0;display:none;pointer-events:none;z-index:60;align-items:center;justify-content:center;background:rgba(0,0,0,.80);font-size:120px;font-weight:950}
 
 /* finish + stats */
 .finishCard{text-align:center;padding:26px 18px}.finishTitle{font-size:43px;font-weight:950}.finishStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.finishStats div{padding:12px 6px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(10,10,13,.72)}.finishNum{font-size:23px;font-weight:900}.finishLab{font-size:11px;color:#bbb;margin-top:3px}
@@ -152,6 +152,17 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   .presetCard{padding-left:10px}
 }
 
+
+.presetTitle.compactTitle{
+  font-size:clamp(12px,3.2vw,15px);
+  line-height:1.05;
+  letter-spacing:-.02em;
+  overflow-wrap:anywhere;
+}
+@media(max-width:430px){
+  .presetTitle.compactTitle{font-size:13px}
+}
+
 </style>
 </head>
 <body class="theme-gym">
@@ -176,7 +187,7 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   </div>
   <div class="presetCard" data-preset-id="australian">
     <div class="presetIcon photoIcon"><img src="./icon_australian.jpg" alt=""></div>
-    <div class="presetText"><div class="presetTitle">AUSTRALIAN PULL-UPS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
+    <div class="presetText"><div class="presetTitle compactTitle">AUSTRALIAN PULL-UPS</div><div class="presetMeta">10 Reps · 30 Sek. · 20 Runden</div></div><div class="arrow">›</div>
   </div>
   <div class="presetCard" data-preset-id="squats">
     <div class="presetIcon photoIcon"><img src="./icon_squats.jpg" alt=""></div>
@@ -350,14 +361,14 @@ async function unlockMediaAudio(){
 
 function getPresets(){
   let saved=[];
-  try{ saved=JSON.parse(localStorage.getItem('emom-presets-v53')||'[]'); }catch(e){}
+  try{ saved=JSON.parse(localStorage.getItem('emom-presets-v54')||'[]'); }catch(e){}
   const overrides=new Map((Array.isArray(saved)?saved:[]).filter(x=>x&&x.id).map(x=>[x.id,x]));
   const builtins=defaultPresets.map(d=>({...d,...(overrides.get(d.id)||{}),id:d.id,builtin:true,icon:d.icon,unit:d.unit}));
   const custom=(Array.isArray(saved)?saved:[]).filter(x=>x && !defaultPresets.some(d=>d.id===x.id));
   return [...builtins,...custom];
 }
 function setPresets(p){
-  localStorage.setItem('emom-presets-v53',JSON.stringify(p));
+  localStorage.setItem('emom-presets-v54',JSON.stringify(p));
   renderPresets();
 }
 function iconSvg(type){
@@ -404,7 +415,7 @@ function renderPresets(){
     d.dataset.presetId=x.id;
     d.innerHTML=`<div class="presetIcon ${x.image?'photoIcon':''}">${x.image?`<img src="./${x.image}" alt="">`:iconSvg(x.icon||'generic')}</div>
       <div class="presetText">
-        <div class="presetTitle ${x.name.length<=12?'singleLine':''}">${x.name.toUpperCase()}</div>
+        <div class="presetTitle ${x.name.length<=12?'singleLine':(x.name.length>=18?'compactTitle':'')}">${x.name.toUpperCase()}</div>
         <div class="presetMeta">${x.reps} Reps · ${x.interval} Sek. · ${x.rounds} Runden</div>
         <span class="badge">EIGENES PRESET</span>
       </div><div class="arrow">›</div>`;
@@ -460,12 +471,24 @@ function vib(p=70){if($('vibration').checked&&navigator.vibrate)navigator.vibrat
 
 /* Exactly three seconds: 3 shown from 0-1s, 2 from 1-2s, 1 from 2-3s, GO at 3s. */
 function countdown(){
- if(!$('countdown').checked)return Promise.resolve();
- return new Promise(res=>{
-   const ov=$('countdownOverlay');ov.style.display='flex';ov.textContent='3';tone(520,.07,.09);playMediaAudio('warning');
-   setTimeout(()=>{ov.textContent='2';tone(520,.07,.09);playMediaAudio('warning')},1000);
-   setTimeout(()=>{ov.textContent='1';tone(520,.07,.09);playMediaAudio('warning')},2000);
-   setTimeout(()=>{ov.textContent='GO';tone(980,.15,.14);playMediaAudio('round');vib([70,40,70]);setTimeout(()=>{ov.style.display='none';res()},180)},3000);
+ if(!$('countdown').checked) return Promise.resolve();
+ return new Promise(resolve=>{
+   const ov=$('countdownOverlay');
+   ov.style.display='flex';
+   ov.textContent='3';
+   playMediaAudio('warning');
+
+   setTimeout(()=>{ov.textContent='2';playMediaAudio('warning')},1000);
+   setTimeout(()=>{ov.textContent='1';playMediaAudio('warning')},2000);
+   setTimeout(()=>{
+     ov.textContent='GO';
+     playMediaAudio('round');
+     vib([70,40,70]);
+     setTimeout(()=>{
+       ov.style.display='none';
+       resolve();
+     },180);
+   },3000);
  });
 }
 function warn(){if(!$('warning').checked||!running)return;const rem=Math.ceil(workout.interval-(elapsed%workout.interval));if(rem<=3&&rem>=1&&rem!==lastWarn){lastWarn=rem;tone(430,.05,.06);playMediaAudio('warning')}if(rem>3)lastWarn=null}
@@ -477,13 +500,27 @@ function frame(ts){
  if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);playMediaAudio('finish');vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
  renderWorkout();raf=requestAnimationFrame(frame)
 }
-$('start').onclick=async()=>{
- await unlockMediaAudio();
+$('start').onclick=()=>{
  if(running)return;
- const ok=await audio();
- if(ok && $('sound').checked) tone(700,.055,.055); // confirms iPhone audio is unlocked
- if(!started){await countdown();started=true}
- running=true;last=null;renderWorkout();raf=requestAnimationFrame(frame)
+
+ // Try to unlock sound from this user gesture, but never let audio block the workout.
+ unlockMediaAudio().catch(()=>{});
+ audio().catch(()=>{});
+
+ const beginWorkout=()=>{
+   if(!started) started=true;
+   running=true;
+   last=null;
+   renderWorkout();
+   raf=requestAnimationFrame(frame);
+ };
+
+ // Countdown controls only the visual start; if disabled, begin instantly.
+ if(!started && $('countdown').checked){
+   countdown().then(beginWorkout).catch(beginWorkout);
+ }else{
+   beginWorkout();
+ }
 }
 $('pause').onclick=()=>{running=false;last=null;if(raf)cancelAnimationFrame(raf);renderWorkout()}
 $('resetWorkout').onclick=()=>{
@@ -516,12 +553,12 @@ $('savePreset').onclick=()=>{
   alert(existing>=0?'Preset aktualisiert.':'Preset gespeichert.');
 };
 
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v53',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v53')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v54',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v54')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v53-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v54-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v53-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v54-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
