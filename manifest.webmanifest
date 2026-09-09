@@ -5,5 +5,5 @@
   "display": "standalone",
   "background_color": "#09090b",
   "theme_color": "#09090b",
-  "description": "Minimalistischer EMOM-Timer mit dynamischen Presets und responsiven Themes."
+  "description": "Minimalistischer EMOM-Timer mit responsiven Themes, Reset und dynamischen Presets."
 }
