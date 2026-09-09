@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V4.5</title>
+<title>EMOM Reps V4.6</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -39,7 +39,7 @@ main{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 1
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .brand{font-size:27px;font-weight:950;letter-spacing:-.02em}.tag{font-size:10px;color:#ddd;letter-spacing:.08em}
 .iconBtn{width:auto;padding:10px 12px;margin:0;border-radius:14px;background:rgba(15,15,18,.78);color:#fff;border:1px solid var(--panel-border)}
-.card{background:rgba(12,13,16,.56);backdrop-filter:blur(12px) saturate(115%);-webkit-backdrop-filter:blur(12px) saturate(115%);border:1px solid var(--panel-border);border-radius:22px;padding:17px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.22)}
+.card{background:rgba(12,13,16,.46);backdrop-filter:blur(10px) saturate(115%);-webkit-backdrop-filter:blur(10px) saturate(115%);border:1px solid var(--panel-border);border-radius:22px;padding:17px;margin-bottom:14px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
 .sectionTitle{font-size:12px;letter-spacing:.08em;color:#c8c8ce;margin:0 0 9px}
 .presetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .presetCard{display:flex;align-items:center;justify-content:space-between;gap:9px;min-height:132px;padding:15px;border-radius:18px;background:rgba(9,10,12,.60);border:1px solid rgba(255,255,255,.18);cursor:pointer}
@@ -86,6 +86,49 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 .exerciseSvg{width:42px;height:42px;display:block;stroke:#fff;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
 .presetIcon{display:flex;align-items:center;justify-content:center}
 @media(max-width:430px){.exerciseSvg{width:38px;height:38px}}
+
+
+.quickWrap{margin-bottom:18px}
+.quickTitle{padding:0 4px;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.customWide{margin-top:12px;background:rgba(14,15,18,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.presetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.presetCard{
+  position:relative;display:flex;align-items:center;gap:10px;min-height:122px;padding:15px 34px 15px 13px;
+  border-radius:20px;background:rgba(10,11,14,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:pointer
+}
+.presetCard:hover{background:rgba(12,13,16,.68)}
+.presetIcon{min-width:45px;display:flex;align-items:center;justify-content:center}
+.exerciseSvg{width:48px;height:48px;display:block}
+.presetTitle{font-size:clamp(14px,4vw,18px);font-weight:900;line-height:1.05;letter-spacing:-.02em}
+.presetMeta{font-size:10.5px;color:#e0e0e4;margin-top:7px;line-height:1.28}
+.arrow{position:absolute;right:10px;bottom:10px;font-size:24px;color:#ddd}
+.editPreset{
+  position:absolute;right:8px;top:8px;width:28px;height:28px;margin:0;padding:0;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);
+  color:#fff;border:1px solid rgba(255,255,255,.12);font-size:13px;z-index:2
+}
+.modalBackdrop{
+  position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.72);display:none;align-items:flex-end;justify-content:center;
+  padding:16px
+}
+.modalBackdrop.show{display:flex}
+.modal{
+  width:min(520px,100%);background:rgba(18,19,23,.96);border:1px solid rgba(255,255,255,.14);
+  border-radius:24px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.45)
+}
+.modalTitle{font-size:22px;font-weight:900;margin-bottom:14px}
+.modalActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.deleteBtn{background:rgba(100,20,25,.32);color:#ff9197;border:1px solid rgba(255,110,120,.28)}
+.badge{display:inline-block;font-size:9px;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.08);color:#ddd;margin-top:5px}
+@media(max-width:430px){
+  .presetGrid{gap:10px}
+  .presetCard{min-height:116px;padding:13px 31px 13px 11px}
+  .exerciseSvg{width:44px;height:44px}
+  .presetIcon{min-width:40px}
+  .presetTitle{font-size:15px}
+  .presetMeta{font-size:10px}
+}
 
 </style>
 </head>
@@ -181,40 +224,69 @@ const screens=['homeScreen','customScreen','settingsScreen','workoutScreen','fin
 const C=2*Math.PI*52;$('ringProgress').style.strokeDasharray=C;$('ringProgress').style.strokeDashoffset=C;
 
 const defaultPresets=[
- {name:'Push-ups',icon:'pushup',reps:8,interval:30,rounds:20},
- {name:'Pull-ups',icon:'pullup',reps:6,interval:30,rounds:20},
- {name:'Australian Pull-ups',icon:'row',reps:10,interval:30,rounds:20},
- {name:'Squats',icon:'squat',reps:10,interval:30,rounds:20},
- {name:'High Knee Raises',icon:'kneeraise',reps:8,interval:30,rounds:20},
- {name:'High Leg Raises',icon:'legraise',reps:8,interval:30,rounds:20},
- {name:'Dips',icon:'dip',reps:6,interval:30,rounds:20},
- {name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.'}
+ {id:'pushups',name:'Push-ups',icon:'pushup',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'pullups',name:'Pull-ups',icon:'pullup',reps:6,interval:30,rounds:20,builtin:true},
+ {id:'australian',name:'Australian Pull-ups',icon:'row',reps:10,interval:30,rounds:20,builtin:true},
+ {id:'squats',name:'Squats',icon:'squat',reps:10,interval:30,rounds:20,builtin:true},
+ {id:'kneeraises',name:'High Knee Raises',icon:'kneeraise',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'legraises',name:'High Leg Raises',icon:'legraise',reps:8,interval:30,rounds:20,builtin:true},
+ {id:'dips',name:'Dips',icon:'dip',reps:6,interval:30,rounds:20,builtin:true},
+ {id:'plank',name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
 ];
-function getPresets(){try{return JSON.parse(localStorage.getItem('emom-presets-v43'))||defaultPresets}catch(e){return defaultPresets}}
-function setPresets(p){localStorage.setItem('emom-presets-v43',JSON.stringify(p));renderPresets()}
-function iconSvg(type){
- const base=(body)=>`<svg class="exerciseSvg" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
- const head=`<circle cx="32" cy="15" r="5"></circle>`;
- const bar=`<line x1="12" y1="8" x2="52" y2="8"></line>`;
- const icons={
-  pushup:base(`<circle cx="47" cy="34" r="4"></circle><line x1="43" y1="37" x2="30" y2="39"></line><line x1="30" y1="39" x2="18" y2="34"></line><line x1="18" y1="34" x2="10" y2="44"></line><line x1="30" y1="39" x2="26" y2="51"></line><line x1="43" y1="37" x2="50" y2="49"></line>`),
-  pullup:base(`${bar}${head}<line x1="28" y1="20" x2="24" y2="34"></line><line x1="36" y1="20" x2="40" y2="34"></line><line x1="24" y1="34" x2="18" y2="8"></line><line x1="40" y1="34" x2="46" y2="8"></line><line x1="32" y1="20" x2="32" y2="44"></line><line x1="32" y1="44" x2="25" y2="57"></line><line x1="32" y1="44" x2="39" y2="57"></line>`),
-  row:base(`${bar}<circle cx="20" cy="28" r="4"></circle><line x1="24" y1="31" x2="35" y2="36"></line><line x1="35" y1="36" x2="48" y2="45"></line><line x1="35" y1="36" x2="42" y2="20"></line><line x1="42" y1="20" x2="45" y2="8"></line><line x1="48" y1="45" x2="56" y2="50"></line>`),
-  squat:base(`${head}<line x1="32" y1="20" x2="29" y2="35"></line><line x1="29" y1="35" x2="18" y2="44"></line><line x1="29" y1="35" x2="42" y2="42"></line><line x1="18" y1="44" x2="12" y2="55"></line><line x1="42" y1="42" x2="52" y2="50"></line><line x1="26" y1="25" x2="16" y2="29"></line><line x1="38" y1="25" x2="49" y2="29"></line>`),
-  kneeraise:base(`${bar}${head}<line x1="32" y1="20" x2="32" y2="39"></line><line x1="25" y1="22" x2="18" y2="8"></line><line x1="39" y1="22" x2="46" y2="8"></line><line x1="32" y1="39" x2="21" y2="47"></line><line x1="21" y1="47" x2="31" y2="52"></line><line x1="32" y1="39" x2="40" y2="54"></line>`),
-  legraise:base(`${bar}${head}<line x1="32" y1="20" x2="32" y2="40"></line><line x1="25" y1="22" x2="18" y2="8"></line><line x1="39" y1="22" x2="46" y2="8"></line><line x1="32" y1="40" x2="52" y2="40"></line><line x1="32" y1="40" x2="50" y2="47"></line>`),
-  dip:base(`<line x1="13" y1="18" x2="13" y2="57"></line><line x1="51" y1="18" x2="51" y2="57"></line>${head}<line x1="32" y1="20" x2="32" y2="39"></line><line x1="24" y1="25" x2="13" y2="31"></line><line x1="40" y1="25" x2="51" y2="31"></line><line x1="32" y1="39" x2="26" y2="54"></line><line x1="32" y1="39" x2="38" y2="54"></line>`),
-  plank:base(`<circle cx="48" cy="31" r="4"></circle><line x1="44" y1="34" x2="30" y2="36"></line><line x1="30" y1="36" x2="15" y2="34"></line><line x1="15" y1="34" x2="8" y2="45"></line><line x1="30" y1="36" x2="26" y2="48"></line><line x1="44" y1="34" x2="50" y2="45"></line>`)
- };
- return icons[type]||base(`<circle cx="32" cy="32" r="12"></circle>`);
+function getPresets(){
+ try{
+   const v=JSON.parse(localStorage.getItem('emom-presets-v46'));
+   if(Array.isArray(v)&&v.length) return v;
+ }catch(e){}
+ // migrate previous customisations if available
+ try{
+   const old=JSON.parse(localStorage.getItem('emom-presets-v43')||localStorage.getItem('emom-presets-v42')||'null');
+   if(Array.isArray(old)&&old.length){
+     const merged=old.map((x,i)=>({...x,id:x.id||('migrated-'+i),builtin:defaultPresets.some(d=>d.name.toLowerCase()===String(x.name).toLowerCase())}));
+     localStorage.setItem('emom-presets-v46',JSON.stringify(merged));
+     return merged;
+   }
+ }catch(e){}
+ localStorage.setItem('emom-presets-v46',JSON.stringify(defaultPresets));
+ return defaultPresets;
 }
+function setPresets(p){localStorage.setItem('emom-presets-v46',JSON.stringify(p));renderPresets()}
+function iconSvg(type){
+ const svg=(body)=>`<svg class="exerciseSvg" viewBox="0 0 64 64" aria-hidden="true">${body}</svg>`;
+ const fill=`fill="white"`;
+ const icons={
+  pushup:svg(`<circle ${fill} cx="49" cy="28" r="5"/><path ${fill} d="M43 32c-6 1-13 2-19 1l-9-4-3 5 11 7c7 1 13 0 19-2l7 10 5-3-6-13c-1-2-3-2-5-1z"/><rect ${fill} x="9" y="46" width="12" height="4" rx="2"/>`),
+  pullup:svg(`<rect ${fill} x="8" y="6" width="48" height="4" rx="2"/><circle ${fill} cx="32" cy="18" r="5"/><path ${fill} d="M28 23h8l4 14-3 10 7 12-5 3-7-11-7 11-5-3 7-12-3-10z"/><path ${fill} d="M27 25 18 11l4-3 10 12 10-12 4 3-9 14z"/>`),
+  row:svg(`<rect ${fill} x="8" y="8" width="48" height="4" rx="2"/><circle ${fill} cx="19" cy="27" r="4.5"/><path ${fill} d="M22 31l13 5 14 8-3 5-15-7-13-4-9-9 4-4 9 6z"/><path ${fill} d="M35 36 41 16h5l-5 22z"/>`),
+  squat:svg(`<circle ${fill} cx="32" cy="15" r="5"/><path ${fill} d="M27 21h10l2 14 10 8-4 5-13-8-11 7-5-5 11-9z"/><path ${fill} d="M22 29 10 34l-2-5 15-7zm20 0 12 5 2-5-15-7z"/>`),
+  kneeraise:svg(`<rect ${fill} x="8" y="6" width="48" height="4" rx="2"/><circle ${fill} cx="32" cy="18" r="5"/><path ${fill} d="M27 23h10v18l-9 6 9 5-3 5-14-8 7-11z"/><path ${fill} d="M26 24 18 10h5l9 11 9-11h5l-8 14z"/>`),
+  legraise:svg(`<rect ${fill} x="8" y="6" width="48" height="4" rx="2"/><circle ${fill} cx="32" cy="18" r="5"/><path ${fill} d="M27 23h10v18h18v6H31c-3 0-5-2-5-5z"/><path ${fill} d="M26 24 18 10h5l9 11 9-11h5l-8 14z"/>`),
+  dip:svg(`<rect ${fill} x="9" y="25" width="5" height="34" rx="2"/><rect ${fill} x="50" y="25" width="5" height="34" rx="2"/><circle ${fill} cx="32" cy="17" r="5"/><path ${fill} d="M27 22h10v19l7 14-5 3-7-11-7 11-5-3 7-14z"/><path ${fill} d="M27 25 14 31v6l15-7zm10 0 13 6v6l-15-7z"/>`),
+  plank:svg(`<circle ${fill} cx="49" cy="31" r="4.5"/><path ${fill} d="M44 34c-7 1-15 2-22 0l-9-3-3 5 12 6c7 1 14 0 21-2l7 10 5-3-6-12c-1-2-3-2-5-1z"/>`),
+  generic:svg(`<circle ${fill} cx="32" cy="32" r="12"/>`)
+ };
+ return icons[type]||icons.generic;
+}
+let editingPresetId=null;
 function renderPresets(){
  const p=getPresets();const g=$('presetGrid');g.innerHTML='';
  p.forEach(x=>{
   const d=document.createElement('div');d.className='presetCard';
   const unit=x.unit||'Reps';
-  d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div><div class="presetText"><div class="presetTitle">${x.name.toUpperCase()}</div><div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div></div><div class="arrow">›</div>`;
-  d.onclick=()=>setWorkout(x.name,x.reps,x.interval,x.rounds);g.appendChild(d);
+  d.innerHTML=`<div class="presetIcon">${iconSvg(x.icon)}</div>
+    <div class="presetText">
+      <div class="presetTitle">${x.name.toUpperCase()}</div>
+      <div class="presetMeta">${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden</div>
+      ${x.builtin?'':'<span class="badge">EIGENES PRESET</span>'}
+    </div>
+    <button class="editPreset" aria-label="Preset bearbeiten">✎</button>
+    <div class="arrow">›</div>`;
+  d.onclick=(ev)=>{
+    if(ev.target.closest('.editPreset')) return;
+    setWorkout(x.name,x.reps,x.interval,x.rounds);
+  };
+  d.querySelector('.editPreset').onclick=(ev)=>{ev.stopPropagation();openPresetEditor(x.id)};
+  g.appendChild(d);
  });
 }
 
@@ -275,15 +347,24 @@ $('muteBtn').onclick=()=>{$('sound').checked=!$('sound').checked;$('muteBtn').te
 $('customBtn').onclick=()=>show('customScreen');$('openSettings').onclick=()=>show('settingsScreen');document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('homeScreen'));
 function customVals(){return {name:$('exercise').value.trim()||'Workout',reps:+$('reps').value||1,interval:+$('interval').value||30,rounds:+$('roundsInput').value||1}}
 $('prepareCustom').onclick=()=>{const x=customVals();setWorkout(x.name,x.reps,x.interval,x.rounds)}
-$('savePreset').onclick=()=>{const x=customVals();let p=getPresets();const i=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());if(i>=0){p[i]={...p[i],...x}}else{p.push({...x,icon:'generic'})}setPresets(p);alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');}
-;['reps','roundsInput'].forEach(id=>$(id).addEventListener('input',()=>{$('target').value=(+$('reps').value||0)*(+$('roundsInput').value||0)}));
+$('savePreset').onclick=()=>{
+ const x=customVals();let p=getPresets();
+ const i=p.findIndex(z=>z.name.toLowerCase()===x.name.toLowerCase());
+ if(i>=0){
+   p[i]={...p[i],...x};
+ }else{
+   p.push({...x,id:'custom-'+Date.now(),icon:'generic',builtin:false});
+ }
+ setPresets(p);
+ alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');
+};
 
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v43',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v43')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v46',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v46')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v43-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v46-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v43-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v46-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
@@ -292,9 +373,71 @@ function renderStats(){
 function renderFinish(){$('finishReps').textContent=target();$('finishRounds').textContent=workout.rounds;$('finishTime').textContent=fmt(totalTime())}
 $('again').onclick=()=>{resetState();renderWorkout();show('workoutScreen')};$('finishHome').onclick=()=>{resetState();renderStats();show('homeScreen')}
 
+
+function updateEditTarget(){
+ const r=+$('editReps').value||0, n=+$('editRounds').value||0;
+ $('editTarget').value=r*n;
+}
+function openPresetEditor(id){
+ const p=getPresets(), x=p.find(z=>z.id===id);
+ if(!x)return;
+ editingPresetId=id;
+ $('editName').value=x.name;
+ $('editReps').value=x.reps;
+ $('editInterval').value=x.interval;
+ $('editRounds').value=x.rounds;
+ updateEditTarget();
+ $('deletePreset').style.display=x.builtin?'none':'block';
+ $('presetModal').classList.add('show');
+}
+$('cancelEdit').onclick=()=>{$('presetModal').classList.remove('show');editingPresetId=null};
+['editReps','editRounds'].forEach(id=>$(id).addEventListener('input',updateEditTarget));
+$('saveEdit').onclick=()=>{
+ let p=getPresets(), i=p.findIndex(z=>z.id===editingPresetId);
+ if(i<0)return;
+ p[i]={...p[i],
+   name:$('editName').value.trim()||p[i].name,
+   reps:Math.max(1,+$('editReps').value||1),
+   interval:Math.max(5,+$('editInterval').value||30),
+   rounds:Math.max(1,+$('editRounds').value||1)
+ };
+ setPresets(p);
+ $('presetModal').classList.remove('show');editingPresetId=null;
+};
+$('deletePreset').onclick=()=>{
+ let p=getPresets(), x=p.find(z=>z.id===editingPresetId);
+ if(!x||x.builtin)return;
+ if(confirm(`Preset "${x.name}" wirklich löschen?`)){
+   p=p.filter(z=>z.id!==editingPresetId);
+   setPresets(p);
+   $('presetModal').classList.remove('show');editingPresetId=null;
+ }
+};
+$('presetModal').onclick=(e)=>{if(e.target===$('presetModal')){$('presetModal').classList.remove('show');editingPresetId=null}};
+
 renderPresets();renderStats();renderWorkout();
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
+
+<div id="presetModal" class="modalBackdrop">
+  <div class="modal">
+    <div class="modalTitle">Preset bearbeiten</div>
+    <label>Übung</label>
+    <input id="editName" type="text">
+    <div class="grid" style="margin-top:12px">
+      <div><label>Reps / Runde</label><input id="editReps" type="number" min="1"></div>
+      <div><label>Intervall (Sek.)</label><input id="editInterval" type="number" min="5"></div>
+      <div><label>Runden</label><input id="editRounds" type="number" min="1"></div>
+      <div><label>Ziel-Reps</label><input id="editTarget" disabled></div>
+    </div>
+    <div class="modalActions">
+      <button class="secondary" id="cancelEdit">ABBRECHEN</button>
+      <button class="primary" id="saveEdit">SPEICHERN</button>
+    </div>
+    <button class="deleteBtn" id="deletePreset">PRESET LÖSCHEN</button>
+  </div>
+</div>
+
 </body>
 </html>

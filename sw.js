@@ -1,4 +1,4 @@
-const CACHE='emom-reps-v4-5';
+const CACHE='emom-reps-v4-6';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./gym.jpg','./prison.jpg','./concrete.jpg','./dark.jpg','./minimal.jpg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
