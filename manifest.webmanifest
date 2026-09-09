@@ -1,0 +1,9 @@
+{
+  "name": "EMOM Reps",
+  "short_name": "EMOM Reps",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "description": "Minimalistischer EMOM-Timer mit Live-Reps und Wochenstatistik."
+}

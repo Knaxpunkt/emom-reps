@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EMOM Reps">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>EMOM Reps</title>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+    body{margin:0;background:#08080a;color:#fff;min-height:100dvh}
+    main{max-width:520px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+    h1{font-size:30px;margin:4px 0 18px}
+    .card{background:#17171b;border:1px solid #29292f;border-radius:22px;padding:18px;margin-bottom:14px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{display:block;font-size:12px;color:#9b9ba3;margin:0 0 6px}
+    input{width:100%;border:1px solid #34343c;border-radius:13px;background:#0d0d10;color:#fff;padding:12px;font-size:21px}
+    .timer{text-align:center;padding:28px 12px}
+    #clock{font-size:76px;line-height:1;font-weight:850;letter-spacing:-4px;font-variant-numeric:tabular-nums}
+    #round{margin-top:12px;font-size:19px;color:#aaa}
+    #live{margin-top:10px;font-size:37px;font-weight:800}
+    #next{margin-top:7px;color:#8e8e97;font-size:13px}
+    button{touch-action:manipulation;width:100%;border:0;border-radius:16px;padding:17px;font-size:19px;font-weight:800;margin-top:10px}
+    #start{background:#fff;color:#000}
+    #pause{background:#29292f;color:#fff}
+    #done{background:#202026;color:#fff}
+    #reset{background:transparent;color:#ff737b;border:1px solid #4b2529}
+    .row{display:flex;gap:10px}.row button{flex:1}
+    .statTitle{font-size:13px;color:#9b9ba3;margin-bottom:8px}
+    #week{font-size:18px;line-height:1.7}
+    .hint{font-size:12px;color:#777;margin-top:8px}
+    .toggle{display:flex;align-items:center;justify-content:space-between}
+    .toggle input{width:24px;height:24px}
+  </style>
+</head>
+<body>
+<main>
+  <h1>EMOM Reps</h1>
+
+  <section class="card">
+    <label>Übung</label>
+    <input id="exercise" value="Push-ups" autocomplete="off">
+    <div class="grid" style="margin-top:12px">
+      <div><label>Reps / Runde</label><input id="reps" type="number" min="1" value="8"></div>
+      <div><label>Intervall (Sek.)</label><input id="interval" type="number" min="5" value="30"></div>
+      <div><label>Dauer (Min.)</label><input id="duration" type="number" min="1" value="10"></div>
+      <div><label>Ziel</label><input id="target" disabled></div>
+    </div>
+  </section>
+
+  <section class="card timer">
+    <div id="clock">00:30</div>
+    <div id="round">Bereit · 20 Runden</div>
+    <div id="live">0 / 160 Reps</div>
+    <div id="next">8 Reps beim Start jeder Runde</div>
+  </section>
+
+  <section class="card toggle">
+    <div>
+      <strong>Runden-Sound</strong>
+      <div class="hint">Kurzer Ton bei jeder neuen Runde.</div>
+    </div>
+    <input id="sound" type="checkbox" checked>
+  </section>
+
+  <button id="start">START</button>
+  <div class="row">
+    <button id="pause">PAUSE</button>
+    <button id="done">SPEICHERN</button>
+  </div>
+  <button id="reset">RESET</button>
+
+  <section class="card" style="margin-top:16px">
+    <div class="statTitle">DIESE WOCHE</div>
+    <div id="week">Noch kein Training gespeichert.</div>
+    <div class="hint">Deine Daten bleiben lokal auf diesem Gerät.</div>
+  </section>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let running=false, elapsed=0, started=false, last=null, raf=null, counted=0, audioCtx=null;
+
+  function val(id,fallback){ const n=Number($(id).value); return Number.isFinite(n)&&n>0?n:fallback; }
+  function config(){
+    const reps=Math.floor(val('reps',8)), interval=val('interval',30), duration=val('duration',10);
+    const rounds=Math.max(1,Math.floor(duration*60/interval)), target=rounds*reps;
+    $('target').value=target;
+    return {reps,interval,duration,rounds,target};
+  }
+  function timeText(s){
+    s=Math.max(0,Math.ceil(s));
+    return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  }
+  function beep(){
+    if(!$('sound').checked) return;
+    try{
+      audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination); o.frequency.value=880;
+      g.gain.setValueAtTime(.12,audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.11);
+      o.start(); o.stop(audioCtx.currentTime+.12);
+    }catch(e){}
+  }
+  function activeRound(c){ return started ? Math.min(Math.floor(elapsed/c.interval)+1,c.rounds) : 0; }
+  function draw(){
+    const c=config(), r=activeRound(c);
+    const remaining=started ? c.interval-(elapsed%c.interval) : c.interval;
+    $('clock').textContent=timeText(remaining);
+    $('round').textContent=started ? `Runde ${r} / ${c.rounds}` : `Bereit · ${c.rounds} Runden`;
+    $('live').textContent=`${Math.min(counted*c.reps,c.target)} / ${c.target} Reps`;
+    $('next').textContent=`${c.reps} Reps beim Start jeder Runde`;
+  }
+  function countRound(c,withSound=true){
+    const r=activeRound(c);
+    if(r>counted){ counted=r; if(withSound) beep(); }
+  }
+  function frame(ts){
+    if(!running) return;
+    if(last===null) last=ts;
+    elapsed+=(ts-last)/1000; last=ts;
+    const c=config(), totalTime=c.rounds*c.interval;
+    if(elapsed>=totalTime){
+      elapsed=Math.max(0,totalTime-.001); counted=c.rounds; running=false; draw(); beep(); return;
+    }
+    countRound(c,true); draw();
+    raf=requestAnimationFrame(frame);
+  }
+  $('start').onclick=async()=>{
+    if(running) return;
+    const c=config(); started=true; running=true; last=null;
+    if($('sound').checked){
+      try{ audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); await audioCtx.resume(); }catch(e){}
+    }
+    countRound(c,true); draw(); raf=requestAnimationFrame(frame);
+  };
+  $('pause').onclick=()=>{running=false;last=null;if(raf)cancelAnimationFrame(raf);draw();};
+  $('reset').onclick=()=>{running=false;started=false;elapsed=0;last=null;counted=0;if(raf)cancelAnimationFrame(raf);draw();};
+
+  function logs(){ try{return JSON.parse(localStorage.getItem('emom-reps-log')||'[]')}catch(e){return[]} }
+  function weekStart(){
+    const d=new Date(), day=(d.getDay()+6)%7; d.setHours(0,0,0,0); d.setDate(d.getDate()-day); return d;
+  }
+  function renderWeek(){
+    const totals={}; const start=weekStart();
+    logs().filter(x=>new Date(x.date)>=start).forEach(x=>totals[x.name]=(totals[x.name]||0)+x.reps);
+    const a=Object.entries(totals);
+    $('week').innerHTML=a.length?a.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
+  }
+  $('done').onclick=()=>{
+    const c=config(), total=Math.min(counted*c.reps,c.target);
+    if(!total){ alert('Starte zuerst das Training.'); return; }
+    const l=logs(); l.push({date:new Date().toISOString(),name:$('exercise').value.trim()||'Training',reps:total});
+    localStorage.setItem('emom-reps-log',JSON.stringify(l)); renderWeek(); alert(`${total} Reps gespeichert.`);
+  };
+  ['reps','interval','duration'].forEach(id=>$(id).addEventListener('input',()=>{if(!started){elapsed=0;counted=0}draw()}));
+  draw(); renderWeek();
+
+  if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+})();
+</script>
+</main>
+</body>
+</html>
