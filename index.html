@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V4.8</title>
+<title>EMOM Reps V4.9</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -191,7 +191,6 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   <div class="card">
     <div class="settingsRow"><div><strong>3-2-1 Start</strong><div class="small">Echte 3 Sekunden</div></div><input id="countdown" type="checkbox" checked></div>
     <div class="settingsRow"><div><strong>Runden-Sound</strong><div class="small">Ton bei neuer Runde</div></div><input id="sound" type="checkbox" checked></div>
-    <button class="secondary" id="testSound" style="margin-top:10px">🔊 TESTTON</button>
     <div class="settingsRow"><div><strong>Vorwarnung</strong><div class="small">3, 2, 1 vor neuer Runde</div></div><input id="warning" type="checkbox" checked></div>
     <div class="settingsRow"><div><strong>Vibration</strong><div class="small">Wenn unterstützt</div></div><input id="vibration" type="checkbox" checked></div>
   </div>
@@ -245,20 +244,37 @@ const defaultPresets=[
  {id:'dips',name:'Dips',icon:'dip',reps:6,interval:30,rounds:20,builtin:true},
  {id:'plank',name:'Plank',icon:'plank',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
 ];
+function normalizePresets(saved){
+  const list=Array.isArray(saved)?saved:[];
+  const byId=new Map(list.filter(x=>x&&x.id).map(x=>[x.id,x]));
+  const builtins=defaultPresets.map(d=>{
+    const s=byId.get(d.id);
+    return s ? {...d,...s,id:d.id,builtin:true,icon:d.icon,unit:d.unit} : {...d};
+  });
+  const custom=list.filter(x=>x && !defaultPresets.some(d=>d.id===x.id))
+    .map((x,i)=>({
+      id:x.id||('custom-'+Date.now()+'-'+i),
+      name:x.name||'Workout',
+      icon:x.icon||'generic',
+      reps:Math.max(1,+x.reps||1),
+      interval:Math.max(5,+x.interval||30),
+      rounds:Math.max(1,+x.rounds||1),
+      builtin:false
+    }));
+  return [...builtins,...custom];
+}
 function getPresets(){
+  let saved=[];
   try{
-    const raw=localStorage.getItem('emom-presets-v48');
-    if(raw){
-      const v=JSON.parse(raw);
-      if(Array.isArray(v) && v.length) return v;
-    }
+    saved=JSON.parse(localStorage.getItem('emom-presets-v49')||'[]');
   }catch(e){}
-  const fresh=defaultPresets.map(x=>({...x}));
-  localStorage.setItem('emom-presets-v48',JSON.stringify(fresh));
-  return fresh;
+  const merged=normalizePresets(saved);
+  try{localStorage.setItem('emom-presets-v49',JSON.stringify(merged))}catch(e){}
+  return merged;
 }
 function setPresets(p){
-  localStorage.setItem('emom-presets-v48',JSON.stringify(p));
+  const merged=normalizePresets(p);
+  localStorage.setItem('emom-presets-v49',JSON.stringify(merged));
   renderPresets();
 }
 function iconSvg(type){
@@ -396,13 +412,12 @@ $('savePreset').onclick=()=>{
  alert(i>=0?'Preset aktualisiert.':'Preset gespeichert.');
 };
 
-$('testSound').onclick=async()=>{const ok=await audio();if(ok){tone(880,.18,.14);setTimeout(()=>tone(1100,.18,.14),260)}else{alert('Audio konnte auf diesem Gerät nicht aktiviert werden.');}};
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v48',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v48')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v49',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v49')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v48-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v49-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v48-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v49-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
@@ -453,7 +468,10 @@ $('saveEdit').onclick=()=>{
  const v=currentEditValues();
  p[i]={...p[i],...v};
  setPresets(p);
- $('presetModal').classList.remove('show'); editingPresetId=null;
+ const btn=$('saveEdit');
+ const old=btn.textContent;
+ btn.textContent='✓ GESPEICHERT';
+ setTimeout(()=>{btn.textContent=old;$('presetModal').classList.remove('show');editingPresetId=null},450);
 };
 $('deletePreset').onclick=()=>{
  let p=getPresets(), x=p.find(z=>z.id===editingPresetId);
