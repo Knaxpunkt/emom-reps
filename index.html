@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V5.4</title>
+<title>EMOM Reps V5.5</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -225,6 +225,7 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
       <div><label>Reps / Runde</label><input id="reps" type="number" value="8" min="1"></div>
       <div><label>Intervall (Sek.)</label><input id="interval" type="number" value="30" min="5"></div>
       <div><label>Runden</label><input id="roundsInput" type="number" value="20" min="1"></div>
+      <div><label>Dauer (Min.)</label><input id="durationInput" type="text" inputmode="decimal" value="10"></div>
       <div><label>Ziel-Reps</label><input id="target" disabled value="160"></div>
     </div>
     <button class="secondary" id="savePreset">ALS PRESET SPEICHERN</button>
@@ -294,6 +295,7 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
       <div><label>Reps / Runde</label><input id="editReps" type="number" min="1"></div>
       <div><label>Intervall (Sek.)</label><input id="editInterval" type="number" min="5"></div>
       <div><label>Runden</label><input id="editRounds" type="number" min="1"></div>
+      <div><label>Dauer (Min.)</label><input id="editDuration" type="text" inputmode="decimal"></div>
       <div><label>Ziel-Reps</label><input id="editTarget" disabled></div>
     </div>
     <button class="primary" id="startPreset" style="margin-top:14px">WORKOUT STARTEN</button>
@@ -359,16 +361,50 @@ async function unlockMediaAudio(){
   }
 }
 
+
+function parseDurationMinutes(v){
+  const s=String(v||'').trim().replace(',', '.');
+  if(s.includes(':')){
+    const parts=s.split(':');
+    const m=parseInt(parts[0]||'0',10)||0;
+    const sec=parseInt(parts[1]||'0',10)||0;
+    return m + sec/60;
+  }
+  const n=parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
+}
+function formatDurationMinutes(mins){
+  const total=Math.round(mins*60);
+  const m=Math.floor(total/60), s=total%60;
+  return s===0 ? String(m) : `${m}:${String(s).padStart(2,'0')}`;
+}
+function calcFromRounds(reps,interval,rounds){
+  reps=Math.max(1,+reps||1);
+  interval=Math.max(1,+interval||30);
+  rounds=Math.max(1,Math.floor(+rounds||1));
+  const seconds=rounds*interval;
+  return {reps,interval,rounds,durationMin:seconds/60,target:rounds*reps};
+}
+function calcFromDuration(reps,interval,durationValue){
+  reps=Math.max(1,+reps||1);
+  interval=Math.max(1,+interval||30);
+  const durationMin=Math.max(interval/60,parseDurationMinutes(durationValue));
+  const totalSec=durationMin*60;
+  const rounds=Math.max(1,Math.floor(totalSec/interval));
+  const actualSeconds=rounds*interval;
+  return {reps,interval,rounds,durationMin:actualSeconds/60,target:rounds*reps};
+}
+
 function getPresets(){
   let saved=[];
-  try{ saved=JSON.parse(localStorage.getItem('emom-presets-v54')||'[]'); }catch(e){}
+  try{ saved=JSON.parse(localStorage.getItem('emom-presets-v55')||'[]'); }catch(e){}
   const overrides=new Map((Array.isArray(saved)?saved:[]).filter(x=>x&&x.id).map(x=>[x.id,x]));
   const builtins=defaultPresets.map(d=>({...d,...(overrides.get(d.id)||{}),id:d.id,builtin:true,icon:d.icon,unit:d.unit}));
   const custom=(Array.isArray(saved)?saved:[]).filter(x=>x && !defaultPresets.some(d=>d.id===x.id));
   return [...builtins,...custom];
 }
 function setPresets(p){
-  localStorage.setItem('emom-presets-v54',JSON.stringify(p));
+  localStorage.setItem('emom-presets-v55',JSON.stringify(p));
   renderPresets();
 }
 function iconSvg(type){
@@ -539,6 +575,23 @@ $('muteBtn').onclick=()=>{$('sound').checked=!$('sound').checked;$('muteBtn').te
 
 $('customBtn').onclick=()=>show('customScreen');$('openSettings').onclick=()=>show('settingsScreen');document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('homeScreen'));
 function customVals(){return {name:$('exercise').value.trim()||'Workout',reps:+$('reps').value||1,interval:+$('interval').value||30,rounds:+$('roundsInput').value||1}}
+
+function syncCustomFromRounds(){
+  const c=calcFromRounds($('reps').value,$('interval').value,$('roundsInput').value);
+  $('durationInput').value=formatDurationMinutes(c.durationMin);
+  $('target').value=c.target;
+}
+function syncCustomFromDuration(){
+  const c=calcFromDuration($('reps').value,$('interval').value,$('durationInput').value);
+  $('roundsInput').value=c.rounds;
+  $('durationInput').value=formatDurationMinutes(c.durationMin);
+  $('target').value=c.target;
+}
+['reps','interval','roundsInput'].forEach(id=>$(id).addEventListener('input',syncCustomFromRounds));
+$('durationInput').addEventListener('change',syncCustomFromDuration);
+$('durationInput').addEventListener('blur',syncCustomFromDuration);
+syncCustomFromRounds();
+
 $('prepareCustom').onclick=()=>{const x=customVals();setWorkout(x.name,x.reps,x.interval,x.rounds)}
 $('savePreset').onclick=()=>{
   const x=customVals();
@@ -553,12 +606,12 @@ $('savePreset').onclick=()=>{
   alert(existing>=0?'Preset aktualisiert.':'Preset gespeichert.');
 };
 
-document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v54',b.dataset.theme)})
-document.body.className='theme-'+(localStorage.getItem('emom-theme-v54')||'gym');
+document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v55',b.dataset.theme)})
+document.body.className='theme-'+(localStorage.getItem('emom-theme-v55')||'gym');
 
-function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v54-log')||'[]')}catch(e){return[]}}
+function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v55-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
-function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v54-log',JSON.stringify(l));renderStats()}
+function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v55-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
@@ -569,17 +622,18 @@ $('again').onclick=()=>{resetState();renderWorkout();show('workoutScreen')};$('f
 
 
 function updateEditTarget(){
- const r=+$('editReps').value||0, n=+$('editRounds').value||0;
- $('editTarget').value=r*n;
+ const c=calcFromRounds($('editReps').value,$('editInterval').value,$('editRounds').value);
+ $('editTarget').value=c.target;
+ $('editDuration').value=formatDurationMinutes(c.durationMin);
 }
 
 function currentEditValues(){
+ const c=calcFromRounds($('editReps').value,$('editInterval').value,$('editRounds').value);
  return {
    name:$('editName').value.trim()||'Workout',
-   reps:Math.max(1,+$('editReps').value||1),
-   interval:Math.max(5,+$('editInterval').value||30),
-   rounds:Math.max(1,+$('editRounds').value||1)
+   reps:c.reps, interval:c.interval, rounds:c.rounds
  };
+};
 }
 $('startPreset').onclick=()=>{
  const v=currentEditValues();
@@ -597,12 +651,25 @@ function openPresetEditor(id){
  $('editReps').value=x.reps;
  $('editInterval').value=x.interval;
  $('editRounds').value=x.rounds;
+ $('editDuration').value=formatDurationMinutes((x.rounds*x.interval)/60);
  updateEditTarget();
  $('deletePreset').style.display=x.builtin?'none':'block';
  $('presetModal').classList.add('show');
 }
 $('cancelEdit').onclick=()=>{$('presetModal').classList.remove('show');editingPresetId=null};
-['editReps','editRounds'].forEach(id=>$(id).addEventListener('input',updateEditTarget));
+['editReps','editInterval','editRounds'].forEach(id=>$(id).addEventListener('input',updateEditTarget));
+$('editDuration').addEventListener('change',()=>{
+ const c=calcFromDuration($('editReps').value,$('editInterval').value,$('editDuration').value);
+ $('editRounds').value=c.rounds;
+ $('editDuration').value=formatDurationMinutes(c.durationMin);
+ $('editTarget').value=c.target;
+});
+$('editDuration').addEventListener('blur',()=>{
+ const c=calcFromDuration($('editReps').value,$('editInterval').value,$('editDuration').value);
+ $('editRounds').value=c.rounds;
+ $('editDuration').value=formatDurationMinutes(c.durationMin);
+ $('editTarget').value=c.target;
+});
 $('saveEdit').onclick=()=>{
   let p=getPresets();
   const i=p.findIndex(z=>z.id===editingPresetId);
