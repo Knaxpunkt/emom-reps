@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V5.5</title>
+<title>EMOM Reps V1.1</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -164,6 +164,19 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 }
 
 </style>
+
+<style id="v1-polish">
+button,.preset,[role="button"]{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{min-height:48px}
+#v1FinishOverlay{position:fixed;inset:0;z-index:99999;display:none;place-items:center;background:rgba(4,5,7,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:24px}
+#v1FinishOverlay.show{display:grid}
+#v1FinishCard{width:min(520px,100%);border:1px solid rgba(255,255,255,.18);border-radius:30px;background:rgba(14,15,19,.95);color:#fff;padding:34px 24px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.45)}
+#v1FinishCheck{font-size:58px;line-height:1;margin-bottom:14px}
+#v1FinishTitle{font-size:28px;font-weight:900;margin-bottom:18px}
+#v1FinishStats{font-size:19px;line-height:1.65;color:rgba(255,255,255,.82);margin-bottom:24px}
+#v1FinishClose{width:100%;border:0;border-radius:18px;padding:16px 20px;font-size:18px;font-weight:900;background:#f7cb59;color:#111}
+</style>
+
 </head>
 <body class="theme-gym">
 <div id="countdownOverlay">3</div>
@@ -461,13 +474,13 @@ function renderPresets(){
 }
 
 let workout={name:'Push-ups',reps:8,interval:30,rounds:20};
-let running=false,started=false,elapsed=0,last=null,raf=null,completed=0,audioCtx=null,lastWarn=null,autoSaved=false;
+let running=false,started=false,elapsed=0,last=null,raf=null,completed=0,audioCtx=null,lastWarn=null,autoSaved=false,lastRemainingSecond=null;
 
 function show(id){screens.forEach(s=>$(s).classList.toggle('hidden',s!==id));window.scrollTo({top:0,behavior:'instant'})}
 function target(){return workout.reps*workout.rounds}
 function totalTime(){return workout.interval*workout.rounds}
 function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-function resetState(){running=false;started=false;elapsed=0;last=null;completed=0;lastWarn=null;autoSaved=false;if(raf)cancelAnimationFrame(raf)}
+function resetState(){running=false;started=false;elapsed=0;last=null;completed=0;lastWarn=null;lastRemainingSecond=null;autoSaved=false;if(raf)cancelAnimationFrame(raf);releaseWakeLock()}
 function setWorkout(name,reps,intv,rounds){workout={name,reps:+reps,interval:+intv,rounds:+rounds};resetState();renderWorkout();show('workoutScreen')}
 function renderWorkout(){
  $('workoutName').textContent=workout.name.toUpperCase();$('workoutMeta').textContent=`${workout.reps} Reps · ${workout.interval} Sek. · ${workout.rounds} Runden`;
@@ -527,13 +540,39 @@ function countdown(){
    },3000);
  });
 }
-function warn(){if(!$('warning').checked||!running)return;const rem=Math.ceil(workout.interval-(elapsed%workout.interval));if(rem<=3&&rem>=1&&rem!==lastWarn){lastWarn=rem;tone(430,.05,.06);playMediaAudio('warning')}if(rem>3)lastWarn=null}
+function warn(){
+ if(!$('warning').checked||!running)return;
+ const rem=Math.ceil(workout.interval-(elapsed%workout.interval));
+ // One clearly separated warning at 3, 2 and 1 seconds before every new round.
+ // Tracking the displayed whole second avoids repeated/missed beeps between animation frames.
+ if(rem!==lastRemainingSecond){
+   lastRemainingSecond=rem;
+   if(rem===3||rem===2||rem===1){tone(520,.10,.09);playMediaAudio('warning');vib(35)}
+ }
+ if(rem>3)lastWarn=null;
+}
+
+let screenWakeLock=null;
+async function requestWakeLock(){
+ try{
+  if('wakeLock' in navigator && document.visibilityState==='visible' && !screenWakeLock){
+   screenWakeLock=await navigator.wakeLock.request('screen');
+   screenWakeLock.addEventListener('release',()=>{screenWakeLock=null});
+  }
+ }catch(e){}
+}
+async function releaseWakeLock(){
+ try{if(screenWakeLock){const lock=screenWakeLock;screenWakeLock=null;await lock.release()}}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='visible'&&running) requestWakeLock();
+});
 function frame(ts){
  if(!running)return;if(last===null)last=ts;elapsed+=(ts-last)/1000;last=ts;
  const should=Math.min(Math.floor(elapsed/workout.interval),workout.rounds);
  if(should>completed){completed=should;if(completed<workout.rounds){tone(880,.1,.11);playMediaAudio('round');vib(70)}}
  warn();
- if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;renderWorkout();tone(1100,.24,.15);playMediaAudio('finish');vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
+ if(elapsed>=totalTime()){elapsed=totalTime();completed=workout.rounds;running=false;releaseWakeLock();renderWorkout();tone(1100,.24,.15);playMediaAudio('finish');vib([120,60,120]);saveWorkout();renderFinish();show('finishScreen');return}
  renderWorkout();raf=requestAnimationFrame(frame)
 }
 $('start').onclick=()=>{
@@ -546,6 +585,7 @@ $('start').onclick=()=>{
  const beginWorkout=()=>{
    if(!started) started=true;
    running=true;
+   requestWakeLock();
    last=null;
    renderWorkout();
    raf=requestAnimationFrame(frame);
@@ -558,9 +598,10 @@ $('start').onclick=()=>{
    beginWorkout();
  }
 }
-$('pause').onclick=()=>{running=false;last=null;if(raf)cancelAnimationFrame(raf);renderWorkout()}
+$('pause').onclick=()=>{running=false;releaseWakeLock();last=null;if(raf)cancelAnimationFrame(raf);renderWorkout()}
 $('resetWorkout').onclick=()=>{
   running=false;
+  releaseWakeLock();
   if(raf)cancelAnimationFrame(raf);
   started=false;
   elapsed=0;
@@ -699,6 +740,33 @@ if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWork
 })();
 </script>
 
+
+
+<div id="v1FinishOverlay" aria-hidden="true">
+ <div id="v1FinishCard">
+  <div id="v1FinishCheck">✓</div>
+  <div id="v1FinishTitle">WORKOUT ABGESCHLOSSEN</div>
+  <div id="v1FinishStats"></div>
+  <button id="v1FinishClose" type="button">FERTIG</button>
+ </div>
+</div>
+
+
+<script id="v1-polish-js">
+(()=>{
+  const ov=document.getElementById('v1FinishOverlay'), st=document.getElementById('v1FinishStats');
+ document.getElementById('v1FinishClose')?.addEventListener('click',()=>{ov.classList.remove('show');ov.setAttribute('aria-hidden','true')});
+ let last='';
+ setInterval(()=>{
+  if(document.body.dataset.running!=='1')return;
+  const txt=document.body.innerText||'';
+  for(const m of txt.matchAll(/(\d+)\s*\/\s*(\d+)/g)){
+   const a=+m[1],b=+m[2],key=a+'/'+b;
+   if(b>0&&a===b&&key!==last){last=key;document.body.dataset.running='0';sleep();st.innerHTML='<strong>'+a+' REPS</strong><br>Ziel erreicht';ov.classList.add('show');ov.setAttribute('aria-hidden','false');try{navigator.vibrate?.([100,60,160])}catch(e){};break}
+  }
+ },700);
+})();
+</script>
 
 </body>
 </html>
