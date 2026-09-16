@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V1.1</title>
+<title>EMOM Reps V1.2.1</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -72,6 +72,14 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 /* finish + stats */
 .finishCard{text-align:center;padding:26px 18px}.finishTitle{font-size:43px;font-weight:950}.finishStats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.finishStats div{padding:12px 6px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(10,10,13,.72)}.finishNum{font-size:23px;font-weight:900}.finishLab{font-size:11px;color:#bbb;margin-top:3px}
 .historyItem{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.historyItem:first-child{border-top:0}
+/* V1.2.1: keep the recent-workouts card compact, but let every saved workout remain reachable. */
+.historyScrollWrap{position:relative}
+#history.historyScroll{max-height:520px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:4px;scrollbar-width:none}
+#history.historyScroll::-webkit-scrollbar{display:none}
+.historyFade{pointer-events:none;position:absolute;left:0;right:0;bottom:0;height:54px;background:linear-gradient(to bottom,rgba(0,0,0,0),rgba(8,8,12,.78));border-radius:0 0 18px 18px;opacity:0;transition:opacity .18s ease}
+.historyScrollWrap.canScroll .historyFade{opacity:1}
+.historyScrollWrap.atBottom .historyFade{opacity:0}
+
 
 @media(max-width:430px){
   main{padding-left:14px;padding-right:14px}
@@ -163,6 +171,23 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
   .presetTitle.compactTitle{font-size:13px}
 }
 
+
+/* V1.2 minimalist training history */
+.historyMore{margin-top:12px;background:transparent;border:1px solid rgba(255,255,255,.12);color:#fff;font-size:13px;letter-spacing:.06em;padding:13px}
+.historyNav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:14px}
+.historyNav button{margin:0;padding:8px;min-height:42px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.10)}
+.historyMonth{text-align:center;font-size:15px;font-weight:850;letter-spacing:.08em}
+.calendarWeek,.calendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.calendarWeek{margin-bottom:5px}.calendarWeek div{text-align:center;font-size:9px;color:var(--muted);letter-spacing:.06em}
+.calendarDay{position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:13px;color:#e8e8eb;cursor:pointer;border:1px solid transparent}
+.calendarDay.muted{opacity:.18;pointer-events:none}.calendarDay.hasWorkout{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12);font-weight:800}
+.calendarDay.hasWorkout::after{content:'';position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.calendarDay.selected{border-color:var(--accent);background:rgba(243,201,93,.10)}
+.dayDetails{margin-top:15px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09)}
+.dayTitle{font-size:12px;letter-spacing:.08em;color:#c8c8ce;margin-bottom:6px}.dayTotal{font-size:13px;color:#ddd;margin-top:9px}
+.monthSummary{margin-top:14px}.monthSummaryRow{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)}.monthSummaryRow:first-of-type{border-top:0}
+.monthGrand{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14);font-weight:900}
+
 </style>
 
 <style id="v1-polish">
@@ -227,7 +252,19 @@ button{min-height:48px}
     <button class="secondary" id="customBtn" style="margin-top:12px">☷ EIGENES WORKOUT</button>
   </div>
   <div class="card"><div class="sectionTitle">DIESE WOCHE</div><div id="week">Noch kein Training gespeichert.</div></div>
-  <div class="card"><div class="sectionTitle">LETZTE TRAININGS</div><div id="history">Noch kein Training gespeichert.</div></div>
+  <div class="card"><div class="sectionTitle">LETZTE TRAININGS</div><div id="historyScrollWrap" class="historyScrollWrap"><div id="history" class="historyScroll">Noch kein Training gespeichert.</div><div class="historyFade" aria-hidden="true"></div></div><button id="openHistory" class="historyMore hidden">ALLE ANZEIGEN →</button></div>
+</section>
+
+
+<section id="historyScreen" class="hidden">
+  <div class="topbar"><button class="secondary backBtn" id="historyBack">‹ Zurück</button><strong>Verlauf</strong><span></span></div>
+  <div class="card">
+    <div class="historyNav"><button id="prevMonth" aria-label="Vorheriger Monat">‹</button><div id="historyMonth" class="historyMonth"></div><button id="nextMonth" aria-label="Nächster Monat">›</button></div>
+    <div class="calendarWeek"><div>MO</div><div>DI</div><div>MI</div><div>DO</div><div>FR</div><div>SA</div><div>SO</div></div>
+    <div id="calendarGrid" class="calendarGrid"></div>
+    <div id="dayDetails" class="dayDetails hidden"></div>
+  </div>
+  <div class="card monthSummary"><div class="sectionTitle">DIESER MONAT</div><div id="monthSummary"></div></div>
 </section>
 
 <section id="customScreen" class="hidden">
@@ -329,7 +366,7 @@ button{min-height:48px}
 <script>
 (()=>{
 const $=id=>document.getElementById(id);
-const screens=['homeScreen','customScreen','settingsScreen','workoutScreen','finishScreen'];
+const screens=['homeScreen','historyScreen','customScreen','settingsScreen','workoutScreen','finishScreen'];
 const C=2*Math.PI*52;$('ringProgress').style.strokeDasharray=C;$('ringProgress').style.strokeDashoffset=C;
 
 const defaultPresets=[
@@ -656,7 +693,13 @@ function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push(
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
  const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
- const recent=l.slice(-5).reverse();$('history').innerHTML=recent.length?recent.map(x=>{const d=new Date(x.date);return `<div class="historyItem"><span>${x.name}<br><span class="small">${d.toLocaleDateString('de-DE')} · ${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`}).join(''):'Noch kein Training gespeichert.'
+ const recent=l.slice().reverse();$('history').innerHTML=recent.length?recent.map(x=>{const d=new Date(x.date);return `<div class="historyItem"><span>${x.name}<br><span class="small">${d.toLocaleDateString('de-DE')} · ${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`}).join(''):'Noch kein Training gespeichert.';
+ const hs=$('history'), hsw=$('historyScrollWrap');
+ const updateHistoryFade=()=>{const can=hs.scrollHeight>hs.clientHeight+2;hsw.classList.toggle('canScroll',can);hsw.classList.toggle('atBottom',!can||hs.scrollTop+hs.clientHeight>=hs.scrollHeight-3)};
+ requestAnimationFrame(updateHistoryFade);
+ if(!hs.dataset.fadeBound){hs.addEventListener('scroll',updateHistoryFade,{passive:true});hs.dataset.fadeBound='1';}
+ $('openHistory').classList.toggle('hidden',!l.length);
+ if(!$('historyScreen').classList.contains('hidden')) renderHistory();
 }
 function renderFinish(){$('finishReps').textContent=target();$('finishRounds').textContent=workout.rounds;$('finishTime').textContent=fmt(totalTime())}
 $('again').onclick=()=>{resetState();renderWorkout();show('workoutScreen')};$('finishHome').onclick=()=>{resetState();renderStats();show('homeScreen')}
@@ -734,6 +777,39 @@ $('deletePreset').onclick=()=>{
  }
 };
 $('presetModal').onclick=(e)=>{if(e.target===$('presetModal')){$('presetModal').classList.remove('show');editingPresetId=null}};
+
+
+// V1.2: compact calendar + monthly progress. Existing local workout log remains unchanged.
+let historyCursor=new Date();historyCursor.setDate(1);historyCursor.setHours(12,0,0,0);
+let selectedHistoryDay=null;
+function localDayKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function renderHistory(){
+ const l=logs(), y=historyCursor.getFullYear(), m=historyCursor.getMonth();
+ $('historyMonth').textContent=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(historyCursor).toUpperCase();
+ const monthLogs=l.filter(x=>{const d=new Date(x.date);return d.getFullYear()===y&&d.getMonth()===m});
+ const byDay={};monthLogs.forEach(x=>{const k=localDayKey(new Date(x.date));(byDay[k]??=[]).push(x)});
+ const first=new Date(y,m,1,12), days=new Date(y,m+1,0).getDate(), offset=(first.getDay()+6)%7;
+ let html='';for(let i=0;i<offset;i++)html+='<div class="calendarDay muted"></div>';
+ for(let day=1;day<=days;day++){
+   const d=new Date(y,m,day,12),k=localDayKey(d),has=!!byDay[k]?.length,sel=k===selectedHistoryDay;
+   html+=`<div class="calendarDay${has?' hasWorkout':''}${sel?' selected':''}" data-day="${k}">${day}</div>`;
+ }
+ $('calendarGrid').innerHTML=html;
+ $('calendarGrid').querySelectorAll('.calendarDay.hasWorkout').forEach(el=>el.onclick=()=>{selectedHistoryDay=el.dataset.day;renderHistory()});
+ const chosen=selectedHistoryDay&&byDay[selectedHistoryDay];
+ if(chosen?.length){
+   const d=new Date(chosen[0].date), total=chosen.reduce((a,x)=>a+(Number(x.reps)||0),0);
+   $('dayDetails').innerHTML=`<div class="dayTitle">${new Intl.DateTimeFormat('de-DE',{day:'numeric',month:'long'}).format(d).toUpperCase()}</div>`+chosen.map(x=>`<div class="historyItem"><span>${x.name}<br><span class="small">${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`).join('')+`<div class="dayTotal"><strong>${total} REPS</strong> gesamt</div>`;
+   $('dayDetails').classList.remove('hidden');
+ }else $('dayDetails').classList.add('hidden');
+ const totals={};monthLogs.forEach(x=>totals[x.name]=(totals[x.name]||0)+(Number(x.reps)||0));
+ const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]), grand=entries.reduce((a,[,v])=>a+v,0);
+ $('monthSummary').innerHTML=entries.length?entries.map(([n,r])=>`<div class="monthSummaryRow"><span>${n}</span><strong>${r} Reps</strong></div>`).join('')+`<div class="monthGrand"><span>GESAMT</span><span>${grand} Reps</span></div>`:'<span class="small">Noch kein Training in diesem Monat.</span>';
+}
+$('openHistory').onclick=()=>{historyCursor=new Date();historyCursor.setDate(1);historyCursor.setHours(12,0,0,0);selectedHistoryDay=null;renderHistory();show('historyScreen')};
+$('historyBack').onclick=()=>{renderStats();show('homeScreen')};
+$('prevMonth').onclick=()=>{historyCursor.setMonth(historyCursor.getMonth()-1);selectedHistoryDay=null;renderHistory()};
+$('nextMonth').onclick=()=>{historyCursor.setMonth(historyCursor.getMonth()+1);selectedHistoryDay=null;renderHistory()};
 
 renderPresets();renderStats();renderWorkout();
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
