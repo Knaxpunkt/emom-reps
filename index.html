@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V1.2.1</title>
+<title>EMOM Reps V1.3</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -22,12 +22,16 @@ html,body{margin:0;background:#09090b;color:#fff;min-height:100%}
 body{
   min-height:100dvh;
   overflow-x:hidden;
-  background-color:#09090b;
-  background-image:var(--bg-image);
-  background-size:cover;
-  background-position:center center;
-  background-repeat:no-repeat;
-  background-attachment:scroll;
+  background:#09090b;
+  position:relative;
+}
+/* V1.3: the wallpaper is tied to the viewport, not to the total page height.
+   This keeps the same crop/zoom on Home, Settings and every other screen. */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-color:#09090b;background-image:var(--bg-image);
+  background-size:cover;background-position:center center;background-repeat:no-repeat;
+  transform:translateZ(0);
 }
 body.theme-gym{--bg-image:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.22)),url('./gym.jpg')}
 body.theme-prison{--bg-image:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,.34)),url('./prison.jpg')}
@@ -35,7 +39,7 @@ body.theme-concrete{--bg-image:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.28)),
 body.theme-dark{--bg-image:url('./dark.jpg')}
 body.theme-minimal{--bg-image:url('./minimal.jpg')}
 
-main{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom))}
+main{position:relative;z-index:1;max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom))}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .brand{font-size:27px;font-weight:950;letter-spacing:-.02em}.tag{font-size:10px;color:#ddd;letter-spacing:.08em}
 .iconBtn{width:auto;padding:10px 12px;margin:0;border-radius:14px;background:rgba(15,15,18,.78);color:#fff;border:1px solid var(--panel-border)}
@@ -188,6 +192,19 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 .monthSummary{margin-top:14px}.monthSummaryRow{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)}.monthSummaryRow:first-of-type{border-top:0}
 .monthGrand{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.14);font-weight:900}
 
+/* V1.3: quick-start sorting + language controls */
+.quickHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.quickHeader .sectionTitle{margin:0}
+.sortBtn{width:auto;min-height:0;margin:0;padding:7px 10px;border-radius:10px;font-size:10px;letter-spacing:.08em;background:rgba(255,255,255,.06);color:#d7d7dc;border:1px solid rgba(255,255,255,.10)}
+.presetGrid.sortMode .presetCard{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.presetGrid.sortMode .presetCard:active{cursor:grabbing}
+.presetGrid.sortMode .presetCard::after{content:'≡';position:absolute;right:9px;top:8px;font-size:17px;color:#f3c95d;font-weight:900}
+.presetGrid.sortMode .presetCard .arrow{opacity:.15}
+.presetCard.dragging{opacity:.55;transform:scale(.98);outline:1px solid rgba(243,201,93,.65)}
+.languageGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.languageBtn{margin:0;padding:14px;background:rgba(10,10,13,.8);color:#fff;border:1px solid rgba(255,255,255,.15)}
+.languageBtn.active{border-color:var(--accent);background:rgba(243,201,93,.10)}
+
 </style>
 
 <style id="v1-polish">
@@ -212,7 +229,7 @@ button{min-height:48px}
     <button class="iconBtn" id="openSettings">⚙︎</button>
   </div>
   <div class="card">
-    <div class="sectionTitle">SCHNELLSTART</div>
+    <div class="quickHeader"><div class="sectionTitle" id="quickTitle">SCHNELLSTART</div><button class="sortBtn" id="sortPresets">SORTIEREN</button></div>
     
 <div id="presetGrid" class="presetGrid">
   <div class="presetCard" data-preset-id="pushups">
@@ -249,45 +266,45 @@ button{min-height:48px}
   </div>
 </div>
 
-    <button class="secondary" id="customBtn" style="margin-top:12px">☷ EIGENES WORKOUT</button>
+    <button class="secondary" id="customBtn" style="margin-top:12px">☷ <span id="customBtnText">EIGENES WORKOUT</span></button>
   </div>
-  <div class="card"><div class="sectionTitle">DIESE WOCHE</div><div id="week">Noch kein Training gespeichert.</div></div>
-  <div class="card"><div class="sectionTitle">LETZTE TRAININGS</div><div id="historyScrollWrap" class="historyScrollWrap"><div id="history" class="historyScroll">Noch kein Training gespeichert.</div><div class="historyFade" aria-hidden="true"></div></div><button id="openHistory" class="historyMore hidden">ALLE ANZEIGEN →</button></div>
+  <div class="card"><div class="sectionTitle" id="weekTitle">DIESE WOCHE</div><div id="week">Noch kein Training gespeichert.</div></div>
+  <div class="card"><div class="sectionTitle" id="recentTitle">LETZTE TRAININGS</div><div id="historyScrollWrap" class="historyScrollWrap"><div id="history" class="historyScroll">Noch kein Training gespeichert.</div><div class="historyFade" aria-hidden="true"></div></div><button id="openHistory" class="historyMore hidden">ALLE ANZEIGEN →</button></div>
 </section>
 
 
 <section id="historyScreen" class="hidden">
-  <div class="topbar"><button class="secondary backBtn" id="historyBack">‹ Zurück</button><strong>Verlauf</strong><span></span></div>
+  <div class="topbar"><button class="secondary backBtn" id="historyBack">‹ Zurück</button><strong id="historyTitle">Verlauf</strong><span></span></div>
   <div class="card">
     <div class="historyNav"><button id="prevMonth" aria-label="Vorheriger Monat">‹</button><div id="historyMonth" class="historyMonth"></div><button id="nextMonth" aria-label="Nächster Monat">›</button></div>
     <div class="calendarWeek"><div>MO</div><div>DI</div><div>MI</div><div>DO</div><div>FR</div><div>SA</div><div>SO</div></div>
     <div id="calendarGrid" class="calendarGrid"></div>
     <div id="dayDetails" class="dayDetails hidden"></div>
   </div>
-  <div class="card monthSummary"><div class="sectionTitle">DIESER MONAT</div><div id="monthSummary"></div></div>
+  <div class="card monthSummary"><div class="sectionTitle" id="monthTitle">DIESER MONAT</div><div id="monthSummary"></div></div>
 </section>
 
 <section id="customScreen" class="hidden">
-  <div class="topbar"><button class="secondary backBtn" data-back>‹ Zurück</button><strong>Eigenes Workout</strong><span></span></div>
+  <div class="topbar"><button class="secondary backBtn" data-back>‹ <span class="backText">Zurück</span></button><strong id="customTitle">Eigenes Workout</strong><span></span></div>
   <div class="card">
-    <label>Übung</label><input id="exercise" value="Push-ups">
+    <label id="exerciseLabel">Übung</label><input id="exercise" value="Push-ups">
     <div class="grid" style="margin-top:12px">
-      <div><label>Reps / Runde</label><input id="reps" type="number" value="8" min="1"></div>
-      <div><label>Intervall (Sek.)</label><input id="interval" type="number" value="30" min="5"></div>
-      <div><label>Runden</label><input id="roundsInput" type="number" value="20" min="1"></div>
-      <div><label>Dauer (Min.)</label><input id="durationInput" type="text" inputmode="decimal" value="10"></div>
-      <div><label>Ziel-Reps</label><input id="target" disabled value="160"></div>
+      <div><label id="repsRoundLabel">Reps / Runde</label><input id="reps" type="number" value="8" min="1"></div>
+      <div><label id="intervalLabel">Intervall (Sek.)</label><input id="interval" type="number" value="30" min="5"></div>
+      <div><label id="roundsLabel">Runden</label><input id="roundsInput" type="number" value="20" min="1"></div>
+      <div><label id="durationLabel">Dauer (Min.)</label><input id="durationInput" type="text" inputmode="decimal" value="10"></div>
+      <div><label id="targetLabel">Ziel-Reps</label><input id="target" disabled value="160"></div>
     </div>
     <button class="secondary" id="savePreset">ALS PRESET SPEICHERN</button>
     <button class="primary" id="prepareCustom">WORKOUT STARTEN</button>
-    <div class="small" style="margin-top:9px">Wenn der Übungsname schon als Preset existiert, wird dieses Preset aktualisiert.</div>
+    <div class="small" id="presetHint" style="margin-top:9px">Wenn der Übungsname schon als Preset existiert, wird dieses Preset aktualisiert.</div>
   </div>
 </section>
 
 <section id="settingsScreen" class="hidden">
-  <div class="topbar"><button class="secondary backBtn" data-back>‹ Zurück</button><strong>Einstellungen</strong><span></span></div>
+  <div class="topbar"><button class="secondary backBtn" data-back>‹ <span class="backText">Zurück</span></button><strong id="settingsTitle">Einstellungen</strong><span></span></div>
   <div class="card">
-    <div class="sectionTitle">HINTERGRUND</div>
+    <div class="sectionTitle" id="backgroundTitle">HINTERGRUND</div>
     <div class="themeGrid">
       <button class="themeBtn" data-theme="gym">90s Sporthalle</button>
       <button class="themeBtn" data-theme="prison">Knast</button>
@@ -297,10 +314,17 @@ button{min-height:48px}
     </div>
   </div>
   <div class="card">
-    <div class="settingsRow"><div><strong>3-2-1 Start</strong><div class="small">Echte 3 Sekunden</div></div><input id="countdown" type="checkbox" checked></div>
-    <div class="settingsRow"><div><strong>Runden-Sound</strong><div class="small">Ton bei neuer Runde</div></div><input id="sound" type="checkbox" checked></div>
-    <div class="settingsRow"><div><strong>Vorwarnung</strong><div class="small">3, 2, 1 vor neuer Runde</div></div><input id="warning" type="checkbox" checked></div>
-    <div class="settingsRow"><div><strong>Vibration</strong><div class="small">Wenn unterstützt</div></div><input id="vibration" type="checkbox" checked></div>
+    <div class="sectionTitle" id="languageTitle">SPRACHE</div>
+    <div class="languageGrid">
+      <button class="languageBtn" data-lang="de">Deutsch</button>
+      <button class="languageBtn" data-lang="en">English</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="settingsRow"><div><strong id="countdownTitle">3-2-1 Start</strong><div class="small" id="countdownDesc">Echte 3 Sekunden</div></div><input id="countdown" type="checkbox" checked></div>
+    <div class="settingsRow"><div><strong id="soundTitle">Runden-Sound</strong><div class="small" id="soundDesc">Ton bei neuer Runde</div></div><input id="sound" type="checkbox" checked></div>
+    <div class="settingsRow"><div><strong id="warningTitle">Vorwarnung</strong><div class="small" id="warningDesc">3, 2, 1 vor neuer Runde</div></div><input id="warning" type="checkbox" checked></div>
+    <div class="settingsRow"><div><strong id="vibrationTitle">Vibration</strong><div class="small" id="vibrationDesc">Wenn unterstützt</div></div><input id="vibration" type="checkbox" checked></div>
   </div>
 </section>
 
@@ -324,11 +348,11 @@ button{min-height:48px}
 
 <section id="finishScreen" class="hidden">
   <div class="card finishCard">
-    <div class="finishTitle">GESCHAFFT!</div><div style="font-size:36px;margin-top:8px">🏆</div>
+    <div class="finishTitle" id="finishTitle">GESCHAFFT!</div><div style="font-size:36px;margin-top:8px">🏆</div>
     <div class="finishStats">
-      <div><div class="finishNum" id="finishReps">160</div><div class="finishLab">REPS</div></div>
-      <div><div class="finishNum" id="finishRounds">20</div><div class="finishLab">RUNDEN</div></div>
-      <div><div class="finishNum" id="finishTime">10:00</div><div class="finishLab">ZEIT</div></div>
+      <div><div class="finishNum" id="finishReps">160</div><div class="finishLab" id="finishRepsLabel">REPS</div></div>
+      <div><div class="finishNum" id="finishRounds">20</div><div class="finishLab" id="finishRoundsLabel">RUNDEN</div></div>
+      <div><div class="finishNum" id="finishTime">10:00</div><div class="finishLab" id="finishTimeLabel">ZEIT</div></div>
     </div>
     <button class="primary" id="again">↻ NOCHMAL</button>
     <button class="secondary" id="finishHome">STARTSEITE</button>
@@ -338,15 +362,15 @@ button{min-height:48px}
 
 <div id="presetModal" class="modalBackdrop">
   <div class="modal">
-    <div class="modalTitle">Preset</div>
-    <label>Übung</label>
+    <div class="modalTitle" id="presetModalTitle">Preset</div>
+    <label id="editExerciseLabel">Übung</label>
     <input id="editName" type="text">
     <div class="grid" style="margin-top:12px">
-      <div><label>Reps / Runde</label><input id="editReps" type="number" min="1"></div>
-      <div><label>Intervall (Sek.)</label><input id="editInterval" type="number" min="5"></div>
-      <div><label>Runden</label><input id="editRounds" type="number" min="1"></div>
-      <div><label>Dauer (Min.)</label><input id="editDuration" type="text" inputmode="decimal"></div>
-      <div><label>Ziel-Reps</label><input id="editTarget" disabled></div>
+      <div><label id="editRepsLabel">Reps / Runde</label><input id="editReps" type="number" min="1"></div>
+      <div><label id="editIntervalLabel">Intervall (Sek.)</label><input id="editInterval" type="number" min="5"></div>
+      <div><label id="editRoundsLabel">Runden</label><input id="editRounds" type="number" min="1"></div>
+      <div><label id="editDurationLabel">Dauer (Min.)</label><input id="editDuration" type="text" inputmode="decimal"></div>
+      <div><label id="editTargetLabel">Ziel-Reps</label><input id="editTarget" disabled></div>
     </div>
     <button class="primary" id="startPreset" style="margin-top:14px">WORKOUT STARTEN</button>
     <div class="modalActions">
@@ -378,7 +402,33 @@ const defaultPresets=[
  {id:'legraises',name:'High Leg Raises',icon:'legraise',image:'icon_leg.jpg',reps:8,interval:30,rounds:20,builtin:true},
  {id:'dips',name:'Dips',icon:'dip',image:'icon_dips.jpg',reps:6,interval:30,rounds:20,builtin:true},
  {id:'plank',name:'Plank',icon:'plank',image:'icon_plank.jpg',reps:30,interval:30,rounds:20,unit:'Sek.',builtin:true}
+
 ];
+
+// V1.3 language foundation. Custom exercise names remain exactly as the user entered them.
+const I18N={
+ de:{quick:'SCHNELLSTART',sort:'SORTIEREN',done:'FERTIG',custom:'EIGENES WORKOUT',week:'DIESE WOCHE',recent:'LETZTE TRAININGS',all:'ALLE ANZEIGEN →',empty:'Noch kein Training gespeichert.',back:'Zurück',history:'Verlauf',month:'DIESER MONAT',settings:'Einstellungen',background:'HINTERGRUND',language:'SPRACHE',customTitle:'Eigenes Workout',exercise:'Übung',repsRound:'Reps / Runde',interval:'Intervall (Sek.)',rounds:'Runden',duration:'Dauer (Min.)',target:'Ziel-Reps',savePreset:'ALS PRESET SPEICHERN',startWorkout:'WORKOUT STARTEN',presetHint:'Wenn der Übungsname schon als Preset existiert, wird dieses Preset aktualisiert.',countdown:'3-2-1 Start',countdownDesc:'Echte 3 Sekunden',roundSound:'Runden-Sound',roundSoundDesc:'Ton bei neuer Runde',warning:'Vorwarnung',warningDesc:'3, 2, 1 vor neuer Runde',vibration:'Vibration',vibrationDesc:'Wenn unterstützt',round:'Runde',now:'Jetzt',doneLabel:'REPS ERLEDIGT',pause:'Ⅱ PAUSE',reset:'↻ RESET',finished:'GESCHAFFT!',time:'ZEIT',again:'↻ NOCHMAL',home:'STARTSEITE',preset:'Preset',cancel:'ABBRECHEN',saveChanges:'ÄNDERUNGEN SPEICHERN',deletePreset:'PRESET LÖSCHEN',saved:'✓ GESPEICHERT',presetUpdated:'Preset aktualisiert.',presetSaved:'Preset gespeichert.',monthEmpty:'Noch kein Training in diesem Monat.',total:'GESAMT',totalWord:'gesamt',ownPreset:'EIGENES PRESET',sec:'Sek.',reps:'Reps'},
+ en:{quick:'QUICK START',sort:'REORDER',done:'DONE',custom:'CUSTOM WORKOUT',week:'THIS WEEK',recent:'RECENT WORKOUTS',all:'VIEW ALL →',empty:'No workout saved yet.',back:'Back',history:'History',month:'THIS MONTH',settings:'Settings',background:'BACKGROUND',language:'LANGUAGE',customTitle:'Custom Workout',exercise:'Exercise',repsRound:'Reps / round',interval:'Interval (sec.)',rounds:'Rounds',duration:'Duration (min.)',target:'Target reps',savePreset:'SAVE AS PRESET',startWorkout:'START WORKOUT',presetHint:'If an exercise with this name already exists, that preset will be updated.',countdown:'3-2-1 Start',countdownDesc:'Real 3 seconds',roundSound:'Round sound',roundSoundDesc:'Sound at the start of a new round',warning:'Warning',warningDesc:'3, 2, 1 before a new round',vibration:'Vibration',vibrationDesc:'When supported',round:'Round',now:'Now',doneLabel:'REPS DONE',pause:'Ⅱ PAUSE',reset:'↻ RESET',finished:'DONE!',time:'TIME',again:'↻ AGAIN',home:'HOME',preset:'Preset',cancel:'CANCEL',saveChanges:'SAVE CHANGES',deletePreset:'DELETE PRESET',saved:'✓ SAVED',presetUpdated:'Preset updated.',presetSaved:'Preset saved.',monthEmpty:'No workout saved this month.',total:'TOTAL',totalWord:'total',ownPreset:'CUSTOM PRESET',sec:'sec.',reps:'Reps'}
+};
+let currentLang=localStorage.getItem('emom-language-v13')||'de';
+if(!I18N[currentLang]) currentLang='de';
+const t=k=>I18N[currentLang][k]||I18N.de[k]||k;
+const locale=()=>currentLang==='en'?'en-GB':'de-DE';
+function applyLanguage(){
+ document.documentElement.lang=currentLang;
+ const text={quickTitle:'quick',customBtnText:'custom',weekTitle:'week',recentTitle:'recent',openHistory:'all',historyTitle:'history',monthTitle:'month',settingsTitle:'settings',backgroundTitle:'background',languageTitle:'language',customTitle:'customTitle',exerciseLabel:'exercise',repsRoundLabel:'repsRound',intervalLabel:'interval',roundsLabel:'rounds',durationLabel:'duration',targetLabel:'target',savePreset:'savePreset',prepareCustom:'startWorkout',presetHint:'presetHint',countdownTitle:'countdown',countdownDesc:'countdownDesc',soundTitle:'roundSound',soundDesc:'roundSoundDesc',warningTitle:'warning',warningDesc:'warningDesc',vibrationTitle:'vibration',vibrationDesc:'vibrationDesc',doneLabel:'doneLabel',pause:'pause',resetWorkout:'reset',finishTitle:'finished',finishRepsLabel:'reps',finishRoundsLabel:'rounds',finishTimeLabel:'time',again:'again',finishHome:'home',presetModalTitle:'preset',editExerciseLabel:'exercise',editRepsLabel:'repsRound',editIntervalLabel:'interval',editRoundsLabel:'rounds',editDurationLabel:'duration',editTargetLabel:'target',startPreset:'startWorkout',cancelEdit:'cancel',saveEdit:'saveChanges',deletePreset:'deletePreset'};
+ Object.entries(text).forEach(([id,key])=>{const el=$(id);if(el)el.textContent=t(key)});
+ document.querySelectorAll('.backText').forEach(el=>el.textContent=t('back'));
+ $('historyBack').textContent='‹ '+t('back');
+ $('sortPresets').textContent=document.getElementById('presetGrid').classList.contains('sortMode')?t('done'):t('sort');
+ document.querySelectorAll('.languageBtn').forEach(b=>b.classList.toggle('active',b.dataset.lang===currentLang));
+ const themeNames=currentLang==='en'?{gym:'90s Sports Hall',prison:'Prison',concrete:'Concrete',dark:'Clean Dark',minimal:'Minimal'}:{gym:'90s Sporthalle',prison:'Knast',concrete:'Beton',dark:'Clean Dark',minimal:'Minimal'};
+ document.querySelectorAll('.themeBtn').forEach(b=>b.textContent=themeNames[b.dataset.theme]||b.textContent);
+ const weekdays=currentLang==='en'?['MO','TU','WE','TH','FR','SA','SU']:['MO','DI','MI','DO','FR','SA','SO'];
+ document.querySelectorAll('.calendarWeek div').forEach((el,i)=>el.textContent=weekdays[i]);
+ renderPresets();renderStats();renderWorkout();
+ if(!$('historyScreen').classList.contains('hidden'))renderHistory();
+}
 
 function playMediaAudio(kind){
   if(!$('sound').checked) return;
@@ -474,6 +524,34 @@ function iconSvg(type){
  return icons[type]||icons.generic;
 }
 let editingPresetId=null;
+
+// V1.3: user-defined Quick Start order, saved locally. Works with mouse and touch/pointer.
+function presetOrder(){try{return JSON.parse(localStorage.getItem('emom-preset-order-v13')||'[]')}catch(e){return[]}}
+function savePresetOrder(){const ids=[...$('presetGrid').querySelectorAll('.presetCard')].map(c=>c.dataset.presetId).filter(Boolean);localStorage.setItem('emom-preset-order-v13',JSON.stringify(ids))}
+function applyPresetOrder(){
+ const g=$('presetGrid'), order=presetOrder(), cards=[...g.querySelectorAll('.presetCard')];
+ const rank=new Map(order.map((id,i)=>[id,i]));
+ cards.sort((a,b)=>(rank.has(a.dataset.presetId)?rank.get(a.dataset.presetId):9999)-(rank.has(b.dataset.presetId)?rank.get(b.dataset.presetId):9999));
+ cards.forEach(c=>g.appendChild(c));
+}
+let draggedCard=null;
+function setSortMode(on){
+ const g=$('presetGrid');g.classList.toggle('sortMode',on);$('sortPresets').textContent=on?t('done'):t('sort');
+ if(!on){savePresetOrder();draggedCard=null;g.querySelectorAll('.dragging').forEach(c=>c.classList.remove('dragging'))}
+}
+$('sortPresets').onclick=()=>setSortMode(!$('presetGrid').classList.contains('sortMode'));
+$('presetGrid').addEventListener('pointerdown',e=>{
+ const g=$('presetGrid');if(!g.classList.contains('sortMode'))return;const card=e.target.closest('.presetCard');if(!card)return;
+ draggedCard=card;card.classList.add('dragging');try{card.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault();
+});
+$('presetGrid').addEventListener('pointermove',e=>{
+ if(!draggedCard)return;const g=$('presetGrid');const el=document.elementFromPoint(e.clientX,e.clientY);const over=el&&el.closest('.presetCard');
+ if(!over||over===draggedCard||over.parentElement!==g)return;
+ const r=over.getBoundingClientRect();const sameRow=Math.abs(e.clientY-(r.top+r.height/2))<r.height*.38;const before=sameRow?e.clientX<r.left+r.width/2:e.clientY<r.top+r.height/2;g.insertBefore(draggedCard,before?over:over.nextSibling);e.preventDefault();
+});
+function finishDrag(){if(!draggedCard)return;draggedCard.classList.remove('dragging');draggedCard=null;savePresetOrder()}
+$('presetGrid').addEventListener('pointerup',finishDrag);$('presetGrid').addEventListener('pointercancel',finishDrag);
+
 function renderPresets(){
   const presets=getPresets();
   const g=$('presetGrid');
@@ -486,8 +564,8 @@ function renderPresets(){
     if(!card) return;
     const unit=x.unit||'Reps';
     card.querySelector('.presetTitle').textContent=x.name.toUpperCase();
-    card.querySelector('.presetMeta').textContent=`${x.reps} ${unit} · ${x.interval} Sek. · ${x.rounds} Runden`;
-    card.onclick=()=>openPresetEditor(def.id);
+    card.querySelector('.presetMeta').textContent=`${x.reps} ${unit==='Sek.'?t('sec'):t('reps')} · ${x.interval} ${t('sec')} · ${x.rounds} ${t('rounds')}`;
+    card.onclick=()=>{if(!g.classList.contains('sortMode'))openPresetEditor(def.id)};
   });
 
   // Remove only previously-rendered custom cards.
@@ -507,12 +585,13 @@ function renderPresets(){
     d.innerHTML=`<div class="presetIcon ${displayImage?'photoIcon':''}">${displayImage?`<img src="./${displayImage}" alt="">`:iconSvg(x.icon||'generic')}</div>
       <div class="presetText">
         <div class="presetTitle ${x.name.length<=12?'singleLine':(x.name.length>=18?'compactTitle':'')}">${x.name.toUpperCase()}</div>
-        <div class="presetMeta">${x.reps} Reps · ${x.interval} Sek. · ${x.rounds} Runden</div>
-        <span class="badge">EIGENES PRESET</span>
+        <div class="presetMeta">${x.reps} ${t('reps')} · ${x.interval} ${t('sec')} · ${x.rounds} ${t('rounds')}</div>
+        <span class="badge">${t('ownPreset')}</span>
       </div><div class="arrow">›</div>`;
-    d.onclick=()=>openPresetEditor(x.id);
+    d.onclick=()=>{if(!g.classList.contains('sortMode'))openPresetEditor(x.id)};
     g.appendChild(d);
   });
+  applyPresetOrder();
 }
 
 let workout={name:'Push-ups',reps:8,interval:30,rounds:20};
@@ -525,9 +604,9 @@ function fmt(s){s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padSt
 function resetState(){running=false;started=false;elapsed=0;last=null;completed=0;lastWarn=null;lastRemainingSecond=null;autoSaved=false;if(raf)cancelAnimationFrame(raf);releaseWakeLock()}
 function setWorkout(name,reps,intv,rounds){workout={name,reps:+reps,interval:+intv,rounds:+rounds};resetState();renderWorkout();show('workoutScreen')}
 function renderWorkout(){
- $('workoutName').textContent=workout.name.toUpperCase();$('workoutMeta').textContent=`${workout.reps} Reps · ${workout.interval} Sek. · ${workout.rounds} Runden`;
+ $('workoutName').textContent=workout.name.toUpperCase();$('workoutMeta').textContent=`${workout.reps} ${t('reps')} · ${workout.interval} ${t('sec')} · ${workout.rounds} ${t('rounds')}`;
  const active=started?Math.min(completed+1,workout.rounds):1,rem=started?workout.interval-(elapsed%workout.interval):workout.interval;
- $('clock').textContent=fmt(rem);$('round').textContent=`Runde ${active} / ${workout.rounds}`;$('live').textContent=`${completed*workout.reps} / ${target()}`;$('now').textContent=`Jetzt: ${workout.reps} ${workout.name}`;
+ $('clock').textContent=fmt(rem);$('round').textContent=`${t('round')} ${active} / ${workout.rounds}`;$('live').textContent=`${completed*workout.reps} / ${target()}`;$('now').textContent=`${t('now')}: ${workout.reps} ${workout.name}`;
  const p=started?(elapsed%workout.interval)/workout.interval:0;$('ringProgress').style.strokeDashoffset=C*(1-p);
 }
 async function audio(){
@@ -686,19 +765,20 @@ $('savePreset').onclick=()=>{
     p.push({...x,id:'custom-'+Date.now(),icon:'generic',builtin:false});
   }
   setPresets(p);
-  alert(existing>=0?'Preset aktualisiert.':'Preset gespeichert.');
+  alert(existing>=0?t('presetUpdated'):t('presetSaved'));
 };
 
 document.querySelectorAll('.themeBtn').forEach(b=>b.onclick=()=>{document.body.className='theme-'+b.dataset.theme;localStorage.setItem('emom-theme-v55',b.dataset.theme)})
 document.body.className='theme-'+(localStorage.getItem('emom-theme-v55')||'gym');
+document.querySelectorAll('.languageBtn').forEach(b=>b.onclick=()=>{currentLang=b.dataset.lang;localStorage.setItem('emom-language-v13',currentLang);applyLanguage()});
 
 function logs(){try{return JSON.parse(localStorage.getItem('emom-reps-v55-log')||'[]')}catch(e){return[]}}
 function weekStart(){const d=new Date(),day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d}
 function saveWorkout(){if(autoSaved)return;autoSaved=true;const l=logs();l.push({date:new Date().toISOString(),name:workout.name,reps:target(),rounds:workout.rounds,time:totalTime()});localStorage.setItem('emom-reps-v55-log',JSON.stringify(l));renderStats()}
 function renderStats(){
  const l=logs(),start=weekStart(),tot={};l.filter(x=>new Date(x.date)>=start).forEach(x=>tot[x.name]=(tot[x.name]||0)+x.reps);
- const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} Reps</strong></div>`).join(''):'Noch kein Training gespeichert.';
- const recent=l.slice().reverse();$('history').innerHTML=recent.length?recent.map(x=>{const d=new Date(x.date);return `<div class="historyItem"><span>${x.name}<br><span class="small">${d.toLocaleDateString('de-DE')} · ${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`}).join(''):'Noch kein Training gespeichert.';
+ const e=Object.entries(tot);$('week').innerHTML=e.length?e.map(([n,r])=>`<div>${n}: <strong>${r} ${t('reps')}</strong></div>`).join(''):t('empty');
+ const recent=l.slice().reverse();$('history').innerHTML=recent.length?recent.map(x=>{const d=new Date(x.date);return `<div class="historyItem"><span>${x.name}<br><span class="small">${d.toLocaleDateString(locale())} · ${x.rounds} ${t('rounds')}</span></span><strong>${x.reps}</strong></div>`}).join(''):t('empty');
  const hs=$('history'), hsw=$('historyScrollWrap');
  const updateHistoryFade=()=>{const can=hs.scrollHeight>hs.clientHeight+2;hsw.classList.toggle('canScroll',can);hsw.classList.toggle('atBottom',!can||hs.scrollTop+hs.clientHeight>=hs.scrollHeight-3)};
  requestAnimationFrame(updateHistoryFade);
@@ -765,9 +845,9 @@ $('saveEdit').onclick=()=>{
   const v=currentEditValues();
   p[i]={...p[i],...v};
   setPresets(p);
-  $('saveEdit').textContent='✓ GESPEICHERT';
+  $('saveEdit').textContent=t('saved');
   setTimeout(()=>{
-    $('saveEdit').textContent='ÄNDERUNGEN SPEICHERN';
+    $('saveEdit').textContent=t('saveChanges');
     $('presetModal').classList.remove('show');
     editingPresetId=null;
   },500);
@@ -775,7 +855,7 @@ $('saveEdit').onclick=()=>{
 $('deletePreset').onclick=()=>{
  let p=getPresets(), x=p.find(z=>z.id===editingPresetId);
  if(!x||x.builtin)return;
- if(confirm(`Preset "${x.name}" wirklich löschen?`)){
+ if(confirm(currentLang==='en'?`Delete preset \"${x.name}\"?`:`Preset \"${x.name}\" wirklich löschen?`)){
    p=p.filter(z=>z.id!==editingPresetId);
    setPresets(p);
    $('presetModal').classList.remove('show');editingPresetId=null;
@@ -790,7 +870,7 @@ let selectedHistoryDay=null;
 function localDayKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function renderHistory(){
  const l=logs(), y=historyCursor.getFullYear(), m=historyCursor.getMonth();
- $('historyMonth').textContent=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(historyCursor).toUpperCase();
+ $('historyMonth').textContent=new Intl.DateTimeFormat(locale(),{month:'long',year:'numeric'}).format(historyCursor).toUpperCase();
  const monthLogs=l.filter(x=>{const d=new Date(x.date);return d.getFullYear()===y&&d.getMonth()===m});
  const byDay={};monthLogs.forEach(x=>{const k=localDayKey(new Date(x.date));(byDay[k]??=[]).push(x)});
  const first=new Date(y,m,1,12), days=new Date(y,m+1,0).getDate(), offset=(first.getDay()+6)%7;
@@ -804,19 +884,19 @@ function renderHistory(){
  const chosen=selectedHistoryDay&&byDay[selectedHistoryDay];
  if(chosen?.length){
    const d=new Date(chosen[0].date), total=chosen.reduce((a,x)=>a+(Number(x.reps)||0),0);
-   $('dayDetails').innerHTML=`<div class="dayTitle">${new Intl.DateTimeFormat('de-DE',{day:'numeric',month:'long'}).format(d).toUpperCase()}</div>`+chosen.map(x=>`<div class="historyItem"><span>${x.name}<br><span class="small">${x.rounds} Runden</span></span><strong>${x.reps}</strong></div>`).join('')+`<div class="dayTotal"><strong>${total} REPS</strong> gesamt</div>`;
+   $('dayDetails').innerHTML=`<div class="dayTitle">${new Intl.DateTimeFormat(locale(),{day:'numeric',month:'long'}).format(d).toUpperCase()}</div>`+chosen.map(x=>`<div class="historyItem"><span>${x.name}<br><span class="small">${x.rounds} ${t('rounds')}</span></span><strong>${x.reps}</strong></div>`).join('')+`<div class="dayTotal"><strong>${total} ${t('reps').toUpperCase()}</strong> ${t('totalWord')}</div>`;
    $('dayDetails').classList.remove('hidden');
  }else $('dayDetails').classList.add('hidden');
  const totals={};monthLogs.forEach(x=>totals[x.name]=(totals[x.name]||0)+(Number(x.reps)||0));
  const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]), grand=entries.reduce((a,[,v])=>a+v,0);
- $('monthSummary').innerHTML=entries.length?entries.map(([n,r])=>`<div class="monthSummaryRow"><span>${n}</span><strong>${r} Reps</strong></div>`).join('')+`<div class="monthGrand"><span>GESAMT</span><span>${grand} Reps</span></div>`:'<span class="small">Noch kein Training in diesem Monat.</span>';
+ $('monthSummary').innerHTML=entries.length?entries.map(([n,r])=>`<div class="monthSummaryRow"><span>${n}</span><strong>${r} ${t('reps')}</strong></div>`).join('')+`<div class="monthGrand"><span>${t('total')}</span><span>${grand} ${t('reps')}</span></div>`:`<span class="small">${t('monthEmpty')}</span>`;
 }
 $('openHistory').onclick=()=>{historyCursor=new Date();historyCursor.setDate(1);historyCursor.setHours(12,0,0,0);selectedHistoryDay=null;renderHistory();show('historyScreen')};
 $('historyBack').onclick=()=>{renderStats();show('homeScreen')};
 $('prevMonth').onclick=()=>{historyCursor.setMonth(historyCursor.getMonth()-1);selectedHistoryDay=null;renderHistory()};
 $('nextMonth').onclick=()=>{historyCursor.setMonth(historyCursor.getMonth()+1);selectedHistoryDay=null;renderHistory()};
 
-renderPresets();renderStats();renderWorkout();
+renderPresets();renderStats();renderWorkout();applyLanguage();
 if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
@@ -839,7 +919,7 @@ if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWork
  document.getElementById('v1FinishClose')?.addEventListener('click',()=>{ov.classList.remove('show');ov.setAttribute('aria-hidden','true')});
  let last='';
  setInterval(()=>{
-  if(document.body.dataset.running!=='1')return;
+  return; // legacy V1 overlay disabled; the real finish screen handles completion
   const txt=document.body.innerText||'';
   for(const m of txt.matchAll(/(\d+)\s*\/\s*(\d+)/g)){
    const a=+m[1],b=+m[2],key=a+'/'+b;

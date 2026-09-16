@@ -1,4 +1,4 @@
-const CACHE='emom-reps-v1-2-2';
+const CACHE='emom-reps-v1-3-0';
 const ASSETS=['./round.wav','./warning.wav','./finish.wav','./icon_pushups.jpg','./icon_pullups.jpg','./icon_australian.jpg','./icon_squats.jpg','./icon_knee.jpg','./icon_leg.jpg','./icon_dips.jpg','./icon_plank.jpg','./icon_support_pullups.jpg','./icon_support_squats.jpg','./','./index.html','./manifest.webmanifest','./gym.jpg','./prison.jpg','./concrete.jpg','./dark.jpg','./minimal.jpg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
