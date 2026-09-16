@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EMOM Reps">
 <link rel="manifest" href="manifest.webmanifest">
-<title>EMOM Reps V1.3</title>
+<title>EMOM Reps V1.3.1</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -200,7 +200,11 @@ input,select{width:100%;border:1px solid rgba(255,255,255,.14);border-radius:13p
 .presetGrid.sortMode .presetCard:active{cursor:grabbing}
 .presetGrid.sortMode .presetCard::after{content:'≡';position:absolute;right:9px;top:8px;font-size:17px;color:#f3c95d;font-weight:900}
 .presetGrid.sortMode .presetCard .arrow{opacity:.15}
-.presetCard.dragging{opacity:.55;transform:scale(.98);outline:1px solid rgba(243,201,93,.65)}
+/* V1.3.1: while sorting, the real card stays as a quiet placeholder and a full-size
+   floating copy follows the finger. This makes the interaction feel like picking up a card. */
+.presetCard.dragging{opacity:.18;outline:1px dashed rgba(243,201,93,.55)}
+.presetDragGhost{position:fixed!important;z-index:9999!important;margin:0!important;pointer-events:none!important;opacity:.98!important;transform:scale(1.035);transform-origin:center;box-shadow:0 18px 42px rgba(0,0,0,.48),0 0 0 1px rgba(243,201,93,.72);cursor:grabbing!important;transition:none!important;will-change:left,top,transform}
+.presetDragGhost::after{content:'≡';position:absolute;right:9px;top:8px;font-size:17px;color:#f3c95d;font-weight:900}
 .languageGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .languageBtn{margin:0;padding:14px;background:rgba(10,10,13,.8);color:#fff;border:1px solid rgba(255,255,255,.15)}
 .languageBtn.active{border-color:var(--accent);background:rgba(243,201,93,.10)}
@@ -534,22 +538,47 @@ function applyPresetOrder(){
  cards.sort((a,b)=>(rank.has(a.dataset.presetId)?rank.get(a.dataset.presetId):9999)-(rank.has(b.dataset.presetId)?rank.get(b.dataset.presetId):9999));
  cards.forEach(c=>g.appendChild(c));
 }
-let draggedCard=null;
+let draggedCard=null,dragGhost=null,dragPointerId=null,dragOffsetX=0,dragOffsetY=0;
+function removeDragGhost(){if(dragGhost){dragGhost.remove();dragGhost=null}}
 function setSortMode(on){
  const g=$('presetGrid');g.classList.toggle('sortMode',on);$('sortPresets').textContent=on?t('done'):t('sort');
- if(!on){savePresetOrder();draggedCard=null;g.querySelectorAll('.dragging').forEach(c=>c.classList.remove('dragging'))}
+ if(!on){
+  savePresetOrder();
+  if(draggedCard)draggedCard.classList.remove('dragging');
+  draggedCard=null;dragPointerId=null;removeDragGhost();
+  g.querySelectorAll('.dragging').forEach(c=>c.classList.remove('dragging'));
+ }
 }
 $('sortPresets').onclick=()=>setSortMode(!$('presetGrid').classList.contains('sortMode'));
 $('presetGrid').addEventListener('pointerdown',e=>{
- const g=$('presetGrid');if(!g.classList.contains('sortMode'))return;const card=e.target.closest('.presetCard');if(!card)return;
- draggedCard=card;card.classList.add('dragging');try{card.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault();
+ const g=$('presetGrid');if(!g.classList.contains('sortMode'))return;
+ const card=e.target.closest('.presetCard');if(!card)return;
+ const r=card.getBoundingClientRect();
+ draggedCard=card;dragPointerId=e.pointerId;dragOffsetX=e.clientX-r.left;dragOffsetY=e.clientY-r.top;
+ card.classList.add('dragging');
+ dragGhost=card.cloneNode(true);dragGhost.classList.remove('dragging');dragGhost.classList.add('presetDragGhost');
+ dragGhost.removeAttribute('id');dragGhost.style.width=r.width+'px';dragGhost.style.height=r.height+'px';
+ dragGhost.style.left=(e.clientX-dragOffsetX)+'px';dragGhost.style.top=(e.clientY-dragOffsetY)+'px';
+ document.body.appendChild(dragGhost);
+ try{card.setPointerCapture(e.pointerId)}catch(_){}
+ e.preventDefault();
 });
 $('presetGrid').addEventListener('pointermove',e=>{
- if(!draggedCard)return;const g=$('presetGrid');const el=document.elementFromPoint(e.clientX,e.clientY);const over=el&&el.closest('.presetCard');
- if(!over||over===draggedCard||over.parentElement!==g)return;
- const r=over.getBoundingClientRect();const sameRow=Math.abs(e.clientY-(r.top+r.height/2))<r.height*.38;const before=sameRow?e.clientX<r.left+r.width/2:e.clientY<r.top+r.height/2;g.insertBefore(draggedCard,before?over:over.nextSibling);e.preventDefault();
+ if(!draggedCard||e.pointerId!==dragPointerId)return;
+ if(dragGhost){dragGhost.style.left=(e.clientX-dragOffsetX)+'px';dragGhost.style.top=(e.clientY-dragOffsetY)+'px'}
+ const g=$('presetGrid'),el=document.elementFromPoint(e.clientX,e.clientY),over=el&&el.closest('.presetCard');
+ if(over&&over!==draggedCard&&over.parentElement===g){
+  const r=over.getBoundingClientRect();
+  const sameRow=Math.abs(e.clientY-(r.top+r.height/2))<r.height*.38;
+  const before=sameRow?e.clientX<r.left+r.width/2:e.clientY<r.top+r.height/2;
+  g.insertBefore(draggedCard,before?over:over.nextSibling);
+ }
+ e.preventDefault();
 });
-function finishDrag(){if(!draggedCard)return;draggedCard.classList.remove('dragging');draggedCard=null;savePresetOrder()}
+function finishDrag(e){
+ if(!draggedCard)return;if(e&&dragPointerId!==null&&e.pointerId!==dragPointerId)return;
+ draggedCard.classList.remove('dragging');draggedCard=null;dragPointerId=null;removeDragGhost();savePresetOrder();
+}
 $('presetGrid').addEventListener('pointerup',finishDrag);$('presetGrid').addEventListener('pointercancel',finishDrag);
 
 function renderPresets(){
