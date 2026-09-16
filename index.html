@@ -495,11 +495,16 @@ function renderPresets(){
 
   // Append custom presets.
   presets.filter(x=>!builtinIds.has(x.id)).forEach(x=>{
+    // Known custom exercise names get a matching built-in photo without changing the saved preset.
+    const normalizedName=(x.name||'').trim().toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ');
+    const supportImage = normalizedName==='support pull-ups' ? 'icon_support_pullups.jpg'
+      : normalizedName==='support squats' ? 'icon_support_squats.jpg' : null;
+    const displayImage=x.image||supportImage;
     const d=document.createElement('div');
     d.className='presetCard';
     d.dataset.custom='true';
     d.dataset.presetId=x.id;
-    d.innerHTML=`<div class="presetIcon ${x.image?'photoIcon':''}">${x.image?`<img src="./${x.image}" alt="">`:iconSvg(x.icon||'generic')}</div>
+    d.innerHTML=`<div class="presetIcon ${displayImage?'photoIcon':''}">${displayImage?`<img src="./${displayImage}" alt="">`:iconSvg(x.icon||'generic')}</div>
       <div class="presetText">
         <div class="presetTitle ${x.name.length<=12?'singleLine':(x.name.length>=18?'compactTitle':'')}">${x.name.toUpperCase()}</div>
         <div class="presetMeta">${x.reps} Reps · ${x.interval} Sek. · ${x.rounds} Runden</div>
